@@ -1,0 +1,32 @@
+using Microsoft.Extensions.Options;
+using Telegram.Bot;
+using TgBotService.Options;
+using TgBotService.Services.Implementations;
+
+namespace TgBotService;
+
+internal class Program
+{
+    public static async Task Main(string[] args)
+    {
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+
+        builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.Telegram));
+
+        builder.Services.AddHttpClient("tg_bot_client").RemoveAllLoggers()
+            .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
+            {
+                TelegramOptions? telegramOptions = sp.GetService<IOptions<TelegramOptions>>()?.Value;
+                ArgumentNullException.ThrowIfNull(telegramOptions);
+                TelegramBotClientOptions options = new(telegramOptions.Token);
+                return new TelegramBotClient(options, httpClient);
+            });
+
+        builder.Services.AddScoped<UpdateHandlerService>();
+        builder.Services.AddScoped<ReceiverService>();
+        builder.Services.AddHostedService<PollingService>();
+
+        IHost host = builder.Build();
+        await host.RunAsync();
+    }
+}
