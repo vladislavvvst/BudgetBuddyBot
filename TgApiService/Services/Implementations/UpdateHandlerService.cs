@@ -6,7 +6,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace TgBotService.Services.Implementations;
+namespace TgApiService.Services.Implementations;
 
 internal class UpdateHandlerService : IUpdateHandler
 {

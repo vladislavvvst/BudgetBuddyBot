@@ -1,4 +1,4 @@
-﻿namespace TgBotService.Options;
+﻿namespace TgApiService.Options;
 
 internal class TelegramOptions
 {

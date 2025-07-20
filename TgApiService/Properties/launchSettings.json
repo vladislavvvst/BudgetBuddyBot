@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "TgBotService": {
+    "TgApiService": {
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"

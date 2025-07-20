@@ -1,6 +1,6 @@
-﻿using TgBotService.Services.Abstract;
+﻿using TgApiService.Services.Abstract;
 
-namespace TgBotService.Services.Implementations;
+namespace TgApiService.Services.Implementations;
 
 internal class PollingService : PollingServiceBase<ReceiverService>
 {

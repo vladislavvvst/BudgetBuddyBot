@@ -1,4 +1,4 @@
-﻿namespace TgBotService.Services.Abstract;
+﻿namespace TgApiService.Services.Abstract;
 
 internal abstract class PollingServiceBase<TReceiverService> : BackgroundService where TReceiverService : IReceiverService
 {

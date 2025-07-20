@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-TgBotService-b39192f2-bf5e-466f-8923-a94b6c0ac843</UserSecretsId>
+    <UserSecretsId>dotnet-TgApiService-cd1b5c5a-bf8e-4e3e-a88d-e3a6552a85bc</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 
     <!-- Configure code analysis. -->
@@ -18,15 +18,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.7" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="Telegram.Bot" Version="22.6.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EditorConfigFiles Remove="D:\projects\Sandbox\BudgetBuddyBot\TgBotService\TgBotService\.editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="D:\projects\Sandbox\BudgetBuddyBot\TgBotService\TgBotService\.editorconfig" />
-  </ItemGroup>
 </Project>

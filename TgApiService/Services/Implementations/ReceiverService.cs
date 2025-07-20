@@ -1,7 +1,7 @@
 ﻿using Telegram.Bot;
-using TgBotService.Services.Abstract;
+using TgApiService.Services.Abstract;
 
-namespace TgBotService.Services.Implementations;
+namespace TgApiService.Services.Implementations;
 
 internal class ReceiverService : ReceiverServiceBase<UpdateHandlerService>
 {

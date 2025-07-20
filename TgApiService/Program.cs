@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
-using TgBotService.Options;
-using TgBotService.Services.Implementations;
+using TgApiService.Options;
+using TgApiService.Services.Implementations;
 
-namespace TgBotService;
+namespace TgApiService;
 
 internal class Program
 {
