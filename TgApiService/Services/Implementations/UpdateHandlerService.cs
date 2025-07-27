@@ -77,31 +77,32 @@ internal class UpdateHandlerService : IUpdateHandler
             return;
         }
 
+        // Сброс состояния при нажатии на другую кнопку кроме добавления траты
         if (action != BotMenuAction.AddExpense)
             _userState = UserState.None;
 
-        Chat chat = callbackQuery.Message.Chat;
+        long chatId = callbackQuery.Message.Chat.Id;
 
         switch (action)
         {
             case BotMenuAction.AddExpense:
                 _userState = UserState.WaitAddExpense;
-                await StartExpenseFlow(chat);
+                await StartExpenseFlow(chatId);
                 break;
             case BotMenuAction.ShowStats:
-                await _botClient.SendMessage(chat, "Здесь будет статистика");
+                await _botClient.SendMessage(chatId, "Здесь будет статистика");
                 break;
             case BotMenuAction.ShowCategories:
-                await _botClient.SendMessage(chat, "Список категорий: ...");
+                await ShowCategoriesHandlerAsync(chatId);
                 break;
             case BotMenuAction.ShowAllExpenses:
-                await _botClient.SendMessage(chat, "Вот ваши траты: ...");
+                await _botClient.SendMessage(chatId, "Вот ваши траты: ...");
                 break;
             case BotMenuAction.Settings:
-                await _botClient.SendMessage(chat, "Настройки бота ");
+                await _botClient.SendMessage(chatId, "Настройки бота ");
                 break;
             default:
-                await _botClient.SendMessage(chat, "Неизвестная команда");
+                await _botClient.SendMessage(chatId, "Неизвестная команда");
                 break;
         }
     }
@@ -109,25 +110,33 @@ internal class UpdateHandlerService : IUpdateHandler
     private async Task<Message> MessageHandlerAsync(Message msg)
     {
         if (msg.Chat.Id != _options.Value.UserId)
-            return await _botClient.SendMessage(msg.Chat, "⛔️ Доступ запрещён! Этот бот только для владельца");
+            return await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца");
 
         if (msg.Chat.Type != ChatType.Private)
-            return await _botClient.SendMessage(msg.Chat, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях");
+            return await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях");
 
         if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/menu")
-            return await ShowMainMenu(msg.Chat);
+            return await ShowMainMenu(msg.Chat.Id);
 
         return _userState switch
         {
             UserState.WaitAddExpense => await ExpenseAddHandlerAsync(msg),
-            _ => await _botClient.SendMessage(msg.Chat, msg.Text ?? string.Empty)
+            _ => await _botClient.SendMessage(msg.Chat.Id, msg.Text ?? string.Empty)
         };
     }
 
-    private Task<Message> ShowMainMenu(Chat chat)
+    private Task<Message> ShowMainMenu(long chatId)
     {
         return _botClient.SendMessage(
-            chat, "Выберите действие:", parseMode: ParseMode.Html, replyMarkup: BuildMainMenuInline);
+            chatId, "Выберите действие:", parseMode: ParseMode.Html, replyMarkup: BuildMainMenuInline);
+    }
+
+    private async Task ShowCategoriesHandlerAsync(long chatId)
+    {
+        await _botClient.SendMessage(
+            chatId,
+            text: $"Список категорий: <b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>",
+            parseMode: ParseMode.Html);
     }
 
     private Task UnknownUpdateHandlerAsync(Update update)
@@ -136,11 +145,11 @@ internal class UpdateHandlerService : IUpdateHandler
         return Task.CompletedTask;
     }
 
-    private async Task<Message> StartExpenseFlow(Chat chat)
+    private async Task<Message> StartExpenseFlow(long chatId)
     {
         return await _botClient.SendMessage
         (
-            chat,
+            chatId: chatId,
             text: "Введите категорию, сумму и комментарий (опционально), например:\n<b>Топливо 1500 Лукойл</b>\n" +
                 "Для отмены напишите: <b>/cancel</b>",
             parseMode: ParseMode.Html,
@@ -153,28 +162,28 @@ internal class UpdateHandlerService : IUpdateHandler
         if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/cancel")
         {
             _userState = UserState.None;
-            return await _botClient.SendMessage(msg.Chat, "⛔️ Действие отменено");
+            return await _botClient.SendMessage(msg.Chat.Id, "⛔️ Действие отменено");
         }
 
         string? input = msg.Text?.Trim();
         if (string.IsNullOrWhiteSpace(input))
-            return await _botClient.SendMessage(msg.Chat, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel");
+            return await _botClient.SendMessage(msg.Chat.Id, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel");
 
         string[] parts = input.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
-            return await _botClient.SendMessage(msg.Chat, "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: " +
+            return await _botClient.SendMessage(msg.Chat.Id, "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: " +
                 "<b>Топливо 1500 Лукойл</b>", parseMode: ParseMode.Html);
 
         // Категория
         string categoryText = parts[0];
         if (!ExpenseCategoryParser.TryParse(categoryText, out var category))
-            return await _botClient.SendMessage(msg.Chat, $"Такой категории нет. Доступные:\n" +
+            return await _botClient.SendMessage(msg.Chat.Id, $"Такой категории нет. Доступные:\n" +
                 $"<b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>\nДля отмены напишите: /cancel",
                 parseMode: ParseMode.Html);
 
         // Сумма
         if (!decimal.TryParse(parts[1].Replace(',', '.'), out var amount) || amount <= 0)
-            return await _botClient.SendMessage(msg.Chat, "Некорректная сумма. Введите положительное число\n" +
+            return await _botClient.SendMessage(msg.Chat.Id, "Некорректная сумма. Введите положительное число\n" +
                 "Для отмены напишите: /cancel", parseMode: ParseMode.Html);
 
         // Комментарий
@@ -186,7 +195,7 @@ internal class UpdateHandlerService : IUpdateHandler
 
         return await _botClient.SendMessage
         (
-            msg.Chat,
+            msg.Chat.Id,
             $"Трата <b>{amount}₽</b> в категорию <b>{categoryText}</b> добавлена!" +
                 $"{(comment != null ? $"\nКомментарий: {comment}" : "")}",
             parseMode: ParseMode.Html
