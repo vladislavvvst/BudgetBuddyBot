@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
+using Telegram.Bot.Polling;
 using TgApiService.Options;
-using TgApiService.Services.Implementations;
+using TgApiService.Services;
 
 namespace TgApiService;
 
@@ -22,9 +23,8 @@ internal class Program
                 return new TelegramBotClient(options, httpClient);
             });
 
-        builder.Services.AddScoped<UpdateHandlerService>();
-        builder.Services.AddScoped<ReceiverService>();
-        builder.Services.AddHostedService<PollingService>();
+        builder.Services.AddScoped<IUpdateHandler, UpdateHandlerService>();
+        builder.Services.AddHostedService<BotHostedService>();
 
         IHost host = builder.Build();
         await host.RunAsync();

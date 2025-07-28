@@ -8,7 +8,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Entities;
 using TgApiService.Options;
 
-namespace TgApiService.Services.Implementations;
+namespace TgApiService.Services;
 
 internal enum UserState
 {
