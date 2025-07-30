@@ -10,27 +10,29 @@ using TgApiService.Options;
 
 namespace TgApiService.Services;
 
-internal enum UserState
-{
-    None, WaitAddExpense
-};
-
 internal class UpdateHandlerService : IUpdateHandler
 {
     private readonly ILogger<UpdateHandlerService> _logger;
     private readonly ITelegramBotClient _botClient;
     private readonly IOptions<TelegramOptions> _options;
+    private readonly IUserStateStorage _stateStorage;
 
-    private UserState _userState = UserState.None;
-
-    public UpdateHandlerService(ILogger<UpdateHandlerService> logger, ITelegramBotClient botClient, IOptions<TelegramOptions> options)
+    public UpdateHandlerService
+    (
+        ILogger<UpdateHandlerService> logger, ITelegramBotClient botClient, IOptions<TelegramOptions> options,
+        IUserStateStorage stateStorage
+    )
     {
         _logger = logger;
         _botClient = botClient;
         _options = options;
+        _stateStorage = stateStorage;
     }
 
-    public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
+    public async Task HandleErrorAsync
+    (
+        ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken
+    )
     {
         _logger.LogError("HandleError: {Exception}", exception);
 
@@ -77,16 +79,15 @@ internal class UpdateHandlerService : IUpdateHandler
             return;
         }
 
+        long chatId = callbackQuery.Message.Chat.Id;
+
         // Сброс состояния при нажатии на другую кнопку кроме добавления траты
         if (action != BotMenuAction.AddExpense)
-            _userState = UserState.None;
-
-        long chatId = callbackQuery.Message.Chat.Id;
+            await _stateStorage.SetStateAsync(chatId, UserState.None);
 
         switch (action)
         {
             case BotMenuAction.AddExpense:
-                _userState = UserState.WaitAddExpense;
                 await StartExpenseFlow(chatId);
                 break;
             case BotMenuAction.ShowStats:
@@ -107,27 +108,36 @@ internal class UpdateHandlerService : IUpdateHandler
         }
     }
 
-    private async Task<Message> MessageHandlerAsync(Message msg)
+    private async Task MessageHandlerAsync(Message msg)
     {
         if (msg.Chat.Id != _options.Value.UserId)
-            return await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца");
+        {
+            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца");
+            return;
+        }
 
         if (msg.Chat.Type != ChatType.Private)
-            return await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях");
-
-        if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/menu")
-            return await ShowMainMenu(msg.Chat.Id);
-
-        return _userState switch
         {
-            UserState.WaitAddExpense => await ExpenseAddHandlerAsync(msg),
-            _ => await _botClient.SendMessage(msg.Chat.Id, msg.Text ?? string.Empty)
-        };
+            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях");
+            return;
+        }
+
+        if (msg.Text == "/menu")
+        {
+            await ShowMainMenu(msg.Chat.Id);
+            return;
+        }
+
+        UserState state = await _stateStorage.GetStateAsync(msg.Chat.Id);
+        if (state == UserState.WaitAddExpense)
+            await ExpenseAddHandlerAsync(msg);
+
+        return;
     }
 
-    private Task<Message> ShowMainMenu(long chatId)
+    private async Task ShowMainMenu(long chatId)
     {
-        return _botClient.SendMessage(
+        await _botClient.SendMessage(
             chatId, "Выберите действие:", parseMode: ParseMode.Html, replyMarkup: BuildMainMenuInline);
     }
 
@@ -145,9 +155,10 @@ internal class UpdateHandlerService : IUpdateHandler
         return Task.CompletedTask;
     }
 
-    private async Task<Message> StartExpenseFlow(long chatId)
+    private async Task StartExpenseFlow(long chatId)
     {
-        return await _botClient.SendMessage
+        await _stateStorage.SetStateAsync(chatId, UserState.WaitAddExpense);
+        await _botClient.SendMessage
         (
             chatId: chatId,
             text: "Введите категорию, сумму и комментарий (опционально), например:\n<b>Топливо 1500 Лукойл</b>\n" +
@@ -157,43 +168,55 @@ internal class UpdateHandlerService : IUpdateHandler
         );
     }
 
-    private async Task<Message> ExpenseAddHandlerAsync(Message msg)
+    private async Task ExpenseAddHandlerAsync(Message msg)
     {
         if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/cancel")
         {
-            _userState = UserState.None;
-            return await _botClient.SendMessage(msg.Chat.Id, "⛔️ Действие отменено");
+            await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
+            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Действие отменено");
+            return;
         }
 
         string? input = msg.Text?.Trim();
         if (string.IsNullOrWhiteSpace(input))
-            return await _botClient.SendMessage(msg.Chat.Id, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel");
+        {
+            await _botClient.SendMessage(msg.Chat.Id, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel");
+            return;
+        }
 
         string[] parts = input.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
-            return await _botClient.SendMessage(msg.Chat.Id, "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: " +
+        {
+            await _botClient.SendMessage(msg.Chat.Id, "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: " +
                 "<b>Топливо 1500 Лукойл</b>", parseMode: ParseMode.Html);
+            return;
+        }
 
         // Категория
         string categoryText = parts[0];
         if (!ExpenseCategoryParser.TryParse(categoryText, out var category))
-            return await _botClient.SendMessage(msg.Chat.Id, $"Такой категории нет. Доступные:\n" +
+        {
+            await _botClient.SendMessage(msg.Chat.Id, $"Такой категории нет. Доступные:\n" +
                 $"<b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>\nДля отмены напишите: /cancel",
                 parseMode: ParseMode.Html);
+            return;
+        }
 
         // Сумма
         if (!decimal.TryParse(parts[1].Replace(',', '.'), out var amount) || amount <= 0)
-            return await _botClient.SendMessage(msg.Chat.Id, "Некорректная сумма. Введите положительное число\n" +
+        {
+            await _botClient.SendMessage(msg.Chat.Id, "Некорректная сумма. Введите положительное число\n" +
                 "Для отмены напишите: /cancel", parseMode: ParseMode.Html);
+            return;
+        }
 
         // Комментарий
         string? comment = parts.Length > 2 ? parts[2] : null;
 
         // todo: тут формируем и отправляем DTO, например: SendExpense(category, amount, comment);
 
-        _userState = UserState.None;
-
-        return await _botClient.SendMessage
+        await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
+        await _botClient.SendMessage
         (
             msg.Chat.Id,
             $"Трата <b>{amount}₽</b> в категорию <b>{categoryText}</b> добавлена!" +

@@ -23,6 +23,9 @@ internal class Program
                 return new TelegramBotClient(options, httpClient);
             });
 
+        builder.Services.AddMemoryCache();
+        builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
+
         builder.Services.AddScoped<IUpdateHandler, UpdateHandlerService>();
         builder.Services.AddHostedService<BotHostedService>();
 
