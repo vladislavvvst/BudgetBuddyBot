@@ -26,6 +26,8 @@ internal class Program
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
 
+        builder.Services.AddSingleton(typeof(IRabbitMQService<>), typeof(RabbitMQService<>));
+
         builder.Services.AddScoped<IUpdateHandler, UpdateHandlerService>();
         builder.Services.AddHostedService<BotHostedService>();
 

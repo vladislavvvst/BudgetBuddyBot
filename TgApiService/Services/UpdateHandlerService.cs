@@ -16,17 +16,19 @@ internal class UpdateHandlerService : IUpdateHandler
     private readonly ITelegramBotClient _botClient;
     private readonly IOptions<TelegramOptions> _options;
     private readonly IUserStateStorage _stateStorage;
+    private readonly IRabbitMQService<string> _mqService;
 
     public UpdateHandlerService
     (
         ILogger<UpdateHandlerService> logger, ITelegramBotClient botClient, IOptions<TelegramOptions> options,
-        IUserStateStorage stateStorage
+        IUserStateStorage stateStorage, IRabbitMQService<string> mqService
     )
     {
         _logger = logger;
         _botClient = botClient;
         _options = options;
         _stateStorage = stateStorage;
+        _mqService = mqService;
     }
 
     public async Task HandleErrorAsync
@@ -213,7 +215,13 @@ internal class UpdateHandlerService : IUpdateHandler
         // Комментарий
         string? comment = parts.Length > 2 ? parts[2] : null;
 
+        string mqMessage = $"{category.ToString()} {amount} {comment}";
         // todo: тут формируем и отправляем DTO, например: SendExpense(category, amount, comment);
+        await _mqService.PublishAsync
+        (
+            message: mqMessage,
+            messageBus: new(HostName: "localhost", QueueName: "SpendsQueue")
+        );
 
         await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
         await _botClient.SendMessage
