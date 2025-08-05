@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,10 +6,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-SpendingTrackerService-8bda2350-9fb6-4c68-a838-58a11b85afbc</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <!-- Configure code analysis. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
+    <!--<CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>-->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\RabbitMqMessaging\RabbitMqMessaging.csproj" />
+  </ItemGroup>
+
 </Project>

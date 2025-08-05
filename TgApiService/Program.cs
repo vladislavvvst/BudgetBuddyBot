@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using RabbitMqMessaging;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using TgApiService.Options;
@@ -26,9 +27,9 @@ internal class Program
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
 
-        builder.Services.AddSingleton(typeof(IRabbitMQService<>), typeof(RabbitMQService<>));
+        builder.Services.AddRabbitMqMessaging(builder.Configuration);
 
-        builder.Services.AddScoped<IUpdateHandler, UpdateHandlerService>();
+        builder.Services.AddScoped<IUpdateHandler, UpdateHandler>();
         builder.Services.AddHostedService<BotHostedService>();
 
         IHost host = builder.Build();

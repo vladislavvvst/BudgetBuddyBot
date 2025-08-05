@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
+using RabbitMqMessaging;
+using RabbitMqMessaging.Publisher;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -10,25 +12,27 @@ using TgApiService.Options;
 
 namespace TgApiService.Services;
 
-internal class UpdateHandlerService : IUpdateHandler
+internal class UpdateHandler : IUpdateHandler
 {
-    private readonly ILogger<UpdateHandlerService> _logger;
+    private readonly ILogger<UpdateHandler> _logger;
     private readonly ITelegramBotClient _botClient;
-    private readonly IOptions<TelegramOptions> _options;
+    private readonly IOptions<TelegramOptions> _tgOptions;
+    private readonly IOptions<RabbitMqOptions> _mqOptions;
     private readonly IUserStateStorage _stateStorage;
-    private readonly IRabbitMQService<string> _mqService;
+    private readonly IMessagePublisher _publisher;
 
-    public UpdateHandlerService
+    public UpdateHandler
     (
-        ILogger<UpdateHandlerService> logger, ITelegramBotClient botClient, IOptions<TelegramOptions> options,
-        IUserStateStorage stateStorage, IRabbitMQService<string> mqService
+        ILogger<UpdateHandler> logger, ITelegramBotClient botClient, IOptions<TelegramOptions> tgOptions,
+        IOptions<RabbitMqOptions> mqOptions, IUserStateStorage stateStorage, IMessagePublisher publisher
     )
     {
         _logger = logger;
         _botClient = botClient;
-        _options = options;
+        _tgOptions = tgOptions;
+        _mqOptions = mqOptions;
         _stateStorage = stateStorage;
-        _mqService = mqService;
+        _publisher = publisher;
     }
 
     public async Task HandleErrorAsync
@@ -112,7 +116,7 @@ internal class UpdateHandlerService : IUpdateHandler
 
     private async Task MessageHandlerAsync(Message msg)
     {
-        if (msg.Chat.Id != _options.Value.UserId)
+        if (msg.Chat.Id != _tgOptions.Value.UserId)
         {
             await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца");
             return;
@@ -132,7 +136,7 @@ internal class UpdateHandlerService : IUpdateHandler
 
         UserState state = await _stateStorage.GetStateAsync(msg.Chat.Id);
         if (state == UserState.WaitAddExpense)
-            await ExpenseAddHandlerAsync(msg);
+            await AddExpenseHandlerAsync(msg);
 
         return;
     }
@@ -170,7 +174,7 @@ internal class UpdateHandlerService : IUpdateHandler
         );
     }
 
-    private async Task ExpenseAddHandlerAsync(Message msg)
+    private async Task AddExpenseHandlerAsync(Message msg)
     {
         if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/cancel")
         {
@@ -215,13 +219,13 @@ internal class UpdateHandlerService : IUpdateHandler
         // Комментарий
         string? comment = parts.Length > 2 ? parts[2] : null;
 
-        string mqMessage = $"{category.ToString()} {amount} {comment}";
-        // todo: тут формируем и отправляем DTO, например: SendExpense(category, amount, comment);
-        await _mqService.PublishAsync
-        (
-            message: mqMessage,
-            messageBus: new(HostName: "localhost", QueueName: "SpendsQueue")
-        );
+        string mqMessage = $"{category} {amount} {comment}";
+        await _publisher.PublishAsync(mqMessage, _mqOptions.Value.AddExpenseQueueName);
+        //await _mqPublisher.PublishAsync
+        //(
+        //    message: mqMessage,
+        //    messageBus: new(HostName: _mqOptions.Value.HostName, QueueName: _mqOptions.Value.AddExpenseQueueName)
+        //);
 
         await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
         await _botClient.SendMessage
