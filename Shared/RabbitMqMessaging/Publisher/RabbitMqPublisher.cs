@@ -13,34 +13,61 @@ internal class RabbitMqPublisher : IMessagePublisher
     {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
     };
+    private IChannel? _channel;
+    private readonly SemaphoreSlim _semaphore;
 
     public RabbitMqPublisher(IRabbitMqConnectionProvider provider)
     {
         _provider = provider;
+        _semaphore = new(1,1);
     }
 
     public async Task PublishAsync<T>(T message, string queueName)
     {
-        using IChannel channel = await _provider.GetConnection().CreateChannelAsync();
+        await _semaphore.WaitAsync();
 
-        await channel.QueueDeclareAsync
-        (
-            queue: queueName,
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null
-        );
+        try
+        {
+            if (_channel is null)
+            {
+                IConnection connection = await _provider.GetConnectionAsync();
+                _channel = await connection.CreateChannelAsync();
+            }
 
-        byte[] body = JsonSerializer.SerializeToUtf8Bytes(message, _jsonOptions);
+            await _channel.QueueDeclareAsync
+            (
+                queue: queueName,
+                durable: false,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
 
-        await channel.BasicPublishAsync
-        (
-            exchange: string.Empty,
-            routingKey: queueName,
-            mandatory: false,
-            basicProperties: new BasicProperties(),
-            body: new ReadOnlyMemory<byte>(body)
-        );
+            byte[] body = JsonSerializer.SerializeToUtf8Bytes(message, _jsonOptions);
+
+            await _channel.BasicPublishAsync
+            (
+                exchange: string.Empty,
+                routingKey: queueName,
+                mandatory: false,
+                basicProperties: new BasicProperties(),
+                body: new ReadOnlyMemory<byte>(body)
+            );
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_channel is null)
+            return;
+
+        await _channel.CloseAsync();
+        await _channel.DisposeAsync();
+
+        _channel = null;
     }
 }

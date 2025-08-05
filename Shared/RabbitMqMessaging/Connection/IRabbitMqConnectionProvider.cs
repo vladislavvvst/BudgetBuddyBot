@@ -2,7 +2,7 @@
 
 namespace RabbitMqMessaging.Connection;
 
-internal interface IRabbitMqConnectionProvider
+internal interface IRabbitMqConnectionProvider : IAsyncDisposable
 {
-    IConnection GetConnection();
+    Task<IConnection> GetConnectionAsync();
 }

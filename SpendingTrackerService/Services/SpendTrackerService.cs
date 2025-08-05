@@ -41,7 +41,6 @@ internal class SpendTrackerService : BackgroundService
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("SpendWorker stopping, disposing subscriber");
-        await _subscriber.DisposeAsync();
         await base.StopAsync(cancellationToken);
     }
 

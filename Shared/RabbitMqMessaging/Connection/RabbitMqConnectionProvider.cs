@@ -3,21 +3,34 @@ using RabbitMQ.Client;
 
 namespace RabbitMqMessaging.Connection;
 
-internal class RabbitMqConnectionProvider : IRabbitMqConnectionProvider, IAsyncDisposable
+internal class RabbitMqConnectionProvider : IRabbitMqConnectionProvider
 {
-    private readonly IConnection _connection;
+    private readonly IOptions<RabbitMqOptions> _mqOptions;
+    private IConnection? _connection;
 
-    public RabbitMqConnectionProvider(IOptions<RabbitMqOptions> opts)
+    public RabbitMqConnectionProvider(IOptions<RabbitMqOptions> mqOptions)
     {
-        ConnectionFactory factory = new() { HostName = opts.Value.HostName };
-        _connection = factory.CreateConnectionAsync().Result;
+        _mqOptions = mqOptions;
     }
 
-    public IConnection GetConnection() => _connection;
+    public async Task<IConnection> GetConnectionAsync()
+    {
+        if (_connection is null)
+        {
+            ConnectionFactory factory = new() { HostName = _mqOptions.Value.HostName };
+            _connection = await factory.CreateConnectionAsync();
+        }
+        return _connection;
+    }
 
     public async ValueTask DisposeAsync()
     {
+        if (_connection is null)
+            return;
+
         await _connection.CloseAsync();
         await _connection.DisposeAsync();
+
+        _connection = null;
     }
 }
