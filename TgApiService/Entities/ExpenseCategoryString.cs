@@ -1,12 +1,6 @@
-﻿namespace TgApiService.Entities;
+﻿using SharedTypes;
 
-internal enum ExpenseCategory
-{
-    Supermarkets,
-    Fuel,
-    Marketplaces,
-    FastFood
-}
+namespace TgApiService.Entities;
 
 internal static class ExpenseCategoryParser
 {

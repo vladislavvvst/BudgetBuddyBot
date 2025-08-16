@@ -9,6 +9,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Entities;
 using TgApiService.Options;
+using SharedTypes;
 
 namespace TgApiService.Services;
 
@@ -219,19 +220,18 @@ internal class UpdateHandler : IUpdateHandler
         // Комментарий
         string? comment = parts.Length > 2 ? parts[2] : null;
 
-        string mqMessage = $"{category} {amount} {comment}";
-        await _publisher.PublishAsync(mqMessage, _mqOptions.Value.AddExpenseQueueName);
-        //await _mqPublisher.PublishAsync
-        //(
-        //    message: mqMessage,
-        //    messageBus: new(HostName: _mqOptions.Value.HostName, QueueName: _mqOptions.Value.AddExpenseQueueName)
-        //);
+        // Публикация сообщения в очередь RabbitMQ
+        await _publisher.PublishAsync
+        (
+            new AddExpenseMessage(category, amount, comment),
+            _mqOptions.Value.AddExpenseQueueName
+        );
 
         await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
         await _botClient.SendMessage
         (
             msg.Chat.Id,
-            $"Трата <b>{amount}₽</b> в категорию <b>{categoryText}</b> добавлена!" +
+            $"Трата <b>{amount}₽</b> добавлена в категорию <b>{categoryText}</b>" +
                 $"{(comment != null ? $"\nКомментарий: {comment}" : "")}",
             parseMode: ParseMode.Html
         );

@@ -1,7 +1,9 @@
 ﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMqMessaging.Connection;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 
 namespace RabbitMqMessaging.Subscriber;
 
@@ -11,12 +13,17 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
     private readonly List<string> _consumerTags = [];
     private IChannel? _channel;
 
+    private readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
+    };
+
     public RabbitMqSubscriber(IRabbitMqConnectionProvider provider)
     {
         _provider = provider;
     }
 
-    public async Task SubscribeAsync(Func<T, Task> handler, string queueName)
+    public async Task SubscribeAsync(Func<T, Task> handler, string queueName, Action<Exception> logError)
     {
         if (_channel is null)
         {
@@ -40,15 +47,15 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
         {
             try
             {
-                T? msg = JsonSerializer.Deserialize<T>(ea.Body.Span)
+                T? msg = JsonSerializer.Deserialize<T>(ea.Body.Span, _jsonOptions)
                     ?? throw new InvalidOperationException("Deserialized message is null");
 
                 await handler(msg);
                 await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                /* Ошибка -> логирование или уведомление */
+                logError(ex);
             }
         };
 
@@ -61,7 +68,7 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
         if (_channel is null)
             return;
 
-        foreach (var tag in _consumerTags)
+        foreach (string tag in _consumerTags)
             await _channel.BasicCancelAsync(tag);
 
         await _channel.CloseAsync();

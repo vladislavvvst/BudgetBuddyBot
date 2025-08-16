@@ -9,12 +9,13 @@ namespace RabbitMqMessaging.Publisher;
 internal class RabbitMqPublisher : IMessagePublisher
 {
     private readonly IRabbitMqConnectionProvider _provider;
+    private IChannel? _channel;
+    private readonly SemaphoreSlim _semaphore;
+
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
     };
-    private IChannel? _channel;
-    private readonly SemaphoreSlim _semaphore;
 
     public RabbitMqPublisher(IRabbitMqConnectionProvider provider)
     {
