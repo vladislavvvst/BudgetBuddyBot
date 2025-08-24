@@ -19,9 +19,10 @@ internal class ExpenseDbContext : DbContext
 
             entity.Property(e => e.Id);
 
-            entity.Property(e => e.Category)
-                  .IsRequired()
-                  .HasMaxLength(100);
+            entity.Property(x => x.Category)
+                  .HasConversion<string>()
+                  .HasMaxLength(50)
+                  .IsRequired();
 
             entity.Property(e => e.Amount)
                   .IsRequired()

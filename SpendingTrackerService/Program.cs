@@ -15,6 +15,8 @@ internal class Program
             options => { options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ExpenseDbContext))); });
 
         builder.Services.AddRabbitMqMessaging(builder.Configuration);
+
+        builder.Services.AddScoped<ExpensesRepository>();
         builder.Services.AddHostedService<SpendTrackerService>();
 
         var host = builder.Build();

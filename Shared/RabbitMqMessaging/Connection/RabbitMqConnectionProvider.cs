@@ -13,12 +13,17 @@ internal class RabbitMqConnectionProvider : IRabbitMqConnectionProvider
         _mqOptions = mqOptions;
     }
 
-    public async Task<IConnection> GetConnectionAsync()
+    public async Task<IConnection> GetConnectionAsync(CancellationToken cancellationToken)
     {
         if (_connection is null)
         {
-            ConnectionFactory factory = new() { HostName = _mqOptions.Value.HostName };
-            _connection = await factory.CreateConnectionAsync();
+            ConnectionFactory factory = new()
+            {
+                HostName = _mqOptions.Value.HostName,
+                AutomaticRecoveryEnabled = true,
+                TopologyRecoveryEnabled = true
+            };
+            _connection = await factory.CreateConnectionAsync(cancellationToken);
         }
         return _connection;
     }

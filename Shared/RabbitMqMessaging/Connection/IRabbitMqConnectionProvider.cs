@@ -4,5 +4,5 @@ namespace RabbitMqMessaging.Connection;
 
 internal interface IRabbitMqConnectionProvider : IAsyncDisposable
 {
-    Task<IConnection> GetConnectionAsync();
+    Task<IConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
 }

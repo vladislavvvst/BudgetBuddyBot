@@ -2,5 +2,5 @@
 
 public interface IMessagePublisher : IAsyncDisposable
 {
-    Task PublishAsync<T>(T message, string queueName);
+    Task PublishAsync<T>(T message, string queueName, CancellationToken cancellationToken = default);
 }

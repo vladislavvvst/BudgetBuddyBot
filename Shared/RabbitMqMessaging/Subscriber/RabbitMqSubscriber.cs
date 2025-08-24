@@ -23,12 +23,16 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
         _provider = provider;
     }
 
-    public async Task SubscribeAsync(Func<T, Task> handler, string queueName, Action<Exception> logError)
+    public async Task SubscribeAsync
+    (
+        Func<T, Task> handler, string queueName,
+        Action<Exception> logError, CancellationToken cancellationToken
+    )
     {
         if (_channel is null)
         {
-            IConnection connection = await _provider.GetConnectionAsync();
-            _channel = await connection.CreateChannelAsync();
+            IConnection connection = await _provider.GetConnectionAsync(cancellationToken);
+            _channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
         }
 
         await _channel.QueueDeclareAsync
@@ -37,10 +41,12 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
             durable: false,
             exclusive: false,
             autoDelete: false,
-            arguments: null
+            arguments: null,
+            cancellationToken: cancellationToken
         );
 
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
+        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false,
+            cancellationToken: cancellationToken);
 
         AsyncEventingBasicConsumer consumer = new(_channel);
         consumer.ReceivedAsync += async (s, ea) =>
@@ -51,7 +57,7 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
                     ?? throw new InvalidOperationException("Deserialized message is null");
 
                 await handler(msg);
-                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
@@ -59,7 +65,9 @@ internal class RabbitMqSubscriber<T> : IMessageSubscriber<T> where T : class
             }
         };
 
-        string tag = await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer);
+        string tag = await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer,
+            cancellationToken: cancellationToken);
+
         _consumerTags.Add(tag);
     }
 

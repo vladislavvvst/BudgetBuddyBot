@@ -23,16 +23,16 @@ internal class RabbitMqPublisher : IMessagePublisher
         _semaphore = new(1,1);
     }
 
-    public async Task PublishAsync<T>(T message, string queueName)
+    public async Task PublishAsync<T>(T message, string queueName, CancellationToken cancellationToken)
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync(cancellationToken);
 
         try
         {
             if (_channel is null)
             {
-                IConnection connection = await _provider.GetConnectionAsync();
-                _channel = await connection.CreateChannelAsync();
+                IConnection connection = await _provider.GetConnectionAsync(cancellationToken);
+                _channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
             }
 
             await _channel.QueueDeclareAsync
@@ -41,7 +41,8 @@ internal class RabbitMqPublisher : IMessagePublisher
                 durable: false,
                 exclusive: false,
                 autoDelete: false,
-                arguments: null
+                arguments: null,
+                cancellationToken: cancellationToken
             );
 
             byte[] body = JsonSerializer.SerializeToUtf8Bytes(message, _jsonOptions);
@@ -52,7 +53,8 @@ internal class RabbitMqPublisher : IMessagePublisher
                 routingKey: queueName,
                 mandatory: false,
                 basicProperties: new BasicProperties(),
-                body: new ReadOnlyMemory<byte>(body)
+                body: new ReadOnlyMemory<byte>(body),
+                cancellationToken: cancellationToken
             );
         }
         finally
