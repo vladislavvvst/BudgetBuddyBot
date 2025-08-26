@@ -1,3 +1,3 @@
 ﻿namespace SharedTypes;
 
-public sealed record AddExpense(ExpenseCategory Category, decimal Amount, string? Comment);
+public sealed record AddExpense(string Category, decimal Amount, string? Comment);

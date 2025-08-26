@@ -1,6 +1,7 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using TgApiService.Entities;
 
 namespace TgApiService.Services;
 
@@ -25,6 +26,8 @@ internal class BotHostedService : BackgroundService
     {
         _logger.LogInformation("Starting polling service");
 
+        await EnsureCommandsAsync(stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -46,4 +49,7 @@ internal class BotHostedService : BackgroundService
             }
         }
     }
+
+    private async Task EnsureCommandsAsync(CancellationToken cancellationToken) =>
+        await _botClient.SetMyCommands(BotCommands.ToTelegram(), cancellationToken: cancellationToken);
 }

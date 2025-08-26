@@ -1,35 +1,47 @@
-﻿using SharedTypes;
+﻿namespace TgApiService.Entities;
 
-namespace TgApiService.Entities;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
-internal static class ExpenseCategoryParser
+internal static class ExpenseCategories
 {
-    private static class ExpenseCategoryStrings
+    private static readonly ImmutableArray<string> _items =
+    [
+        "Супермаркеты",
+        "Топливо",
+        "Маркетплейсы",
+        "Фастфуд"
+    ];
+
+    private static readonly HashSet<string> _set = new(_items, StringComparer.OrdinalIgnoreCase);
+
+    public static IReadOnlyList<string> All() => _items;
+
+    public static bool IsValid(string? input)
     {
-        public const string Supermarkets = "Супермаркеты";
-        public const string Fuel = "Топливо";
-        public const string Marketplaces = "Маркетплейсы";
-        public const string FastFood = "Фастфуд";
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
+
+        return _set.Contains(Norm(input));
     }
 
-    private static readonly Dictionary<string, ExpenseCategory> _map = new(StringComparer.OrdinalIgnoreCase)
+    public static bool TryNormalize(string? input, [NotNullWhen(true)] out string? normalized)
     {
-        { ExpenseCategoryStrings.Supermarkets, ExpenseCategory.Supermarkets },
-        { ExpenseCategoryStrings.Fuel, ExpenseCategory.Fuel },
-        { ExpenseCategoryStrings.Marketplaces, ExpenseCategory.Marketplaces },
-        { ExpenseCategoryStrings.FastFood, ExpenseCategory.FastFood }
-    };
+        normalized = null;
 
-    private static readonly Dictionary<ExpenseCategory, string> _reverseMap = _map.ToDictionary(x => x.Value, x => x.Key);
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
 
-    public static bool TryParse(string? input, out ExpenseCategory category)
-    {
-        category = default;
-        return input != null && _map.TryGetValue(input.Trim(), out category);
+        string candidate = Norm(input);
+
+        string? match = _items.FirstOrDefault(s => string.Equals(s, candidate, StringComparison.OrdinalIgnoreCase));
+
+        if (match is null)
+            return false;
+
+        normalized = match;
+        return true;
     }
 
-    public static IEnumerable<string> AllDisplayNames() => _map.Keys;
-
-    public static string ToDisplayName(ExpenseCategory category) =>
-        _reverseMap.TryGetValue(category, out var name) ? name : category.ToString();
+    private static string Norm(string s) => string.Join(' ', s.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 }

@@ -1,7 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Options;
 using SharedTypes;
-using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -92,10 +91,10 @@ internal class UpdateProcessor
         switch (action)
         {
             case BotMenuAction.AddExpense:
-                await StartExpenseFlow(botClient,chatId);
+                await StartExpenseFlow(botClient, chatId);
                 break;
             case BotMenuAction.ShowStats:
-                await botClient.SendMessage(chatId, "Здесь будет статистика", cancellationToken: cancellationToken);
+                await botClient.SendMessage(chatId, BotTexts.StatsPlaceholder, cancellationToken: cancellationToken);
                 break;
             case BotMenuAction.ShowCategories:
                 await ShowCategoriesHandlerAsync(botClient, chatId, cancellationToken);
@@ -104,10 +103,10 @@ internal class UpdateProcessor
                 await GetAllExpensesHandlerAsync(botClient, chatId, cancellationToken);
                 break;
             case BotMenuAction.Settings:
-                await botClient.SendMessage(chatId, "Настройки бота ", cancellationToken: cancellationToken);
+                await botClient.SendMessage(chatId, BotTexts.SettingsPlaceholder, cancellationToken: cancellationToken);
                 break;
             default:
-                await botClient.SendMessage(chatId, "Неизвестная команда", cancellationToken: cancellationToken);
+                await botClient.SendMessage(chatId, BotTexts.UnknownCmd, cancellationToken: cancellationToken);
                 break;
         }
     }
@@ -116,21 +115,34 @@ internal class UpdateProcessor
     {
         if (msg.Chat.Id != _tgOptions.Value.UserId)
         {
-            await botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца",
-                cancellationToken: cancellationToken);
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.AccessDeniedOwner, cancellationToken: cancellationToken);
             return;
         }
 
         if (msg.Chat.Type != ChatType.Private)
         {
-            await botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях",
-                cancellationToken: cancellationToken);
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.AccessDeniedPrivate, cancellationToken: cancellationToken);
             return;
         }
 
-        if (msg.Text == "/menu")
+        if (msg.Text == BotTexts.Menu)
         {
             await ShowMainMenu(botClient, msg.Chat.Id);
+            return;
+        }
+
+        if (msg.Text == BotTexts.Start)
+        {
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.StartText, parseMode: ParseMode.Html,
+                cancellationToken: cancellationToken);
+            await ShowMainMenu(botClient, msg.Chat.Id);
+            return;
+        }
+
+        if (msg.Text == BotTexts.About)
+        {
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.AboutBot, parseMode: ParseMode.Html,
+                cancellationToken: cancellationToken);
             return;
         }
 
@@ -144,32 +156,32 @@ internal class UpdateProcessor
     private static async Task ShowMainMenu(ITelegramBotClient botClient, long chatId)
     {
         await botClient.SendMessage(
-            chatId, "Выберите действие:", parseMode: ParseMode.Html, replyMarkup: BuildMainMenuInline);
+            chatId, BotTexts.ChooseAction, parseMode: ParseMode.Html, replyMarkup: BuildMainMenuInline);
     }
 
     private static async Task ShowCategoriesHandlerAsync(ITelegramBotClient botClient, long chatId, CancellationToken cancellationToken)
     {
         await botClient.SendMessage(
             chatId,
-            text: $"Список категорий: <b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>",
+            BotTexts.CategoriesList(ExpenseCategories.All()),
             parseMode: ParseMode.Html, cancellationToken: cancellationToken);
     }
 
     private async Task GetAllExpensesHandlerAsync(ITelegramBotClient botClient, long chatId, CancellationToken cancellationToken)
     {
         const int pageSize = 10;
-        Response<ExpensesPage> resp = await _getExpensesClient.GetResponse<ExpensesPage>(new(1, pageSize), cancellationToken);
+        Response<ExpensesPage> response = await _getExpensesClient.GetResponse<ExpensesPage>(new(1, pageSize), cancellationToken);
 
-        if (!resp.Message.Items.Any())
+        if (!response.Message.Items.Any())
         {
-            await botClient.SendMessage(chatId, "Пока нет трат.", cancellationToken: cancellationToken);
+            await botClient.SendMessage(chatId, BotTexts.NoExpenses, cancellationToken: cancellationToken);
             return;
         }
 
-        IEnumerable<string> lines = resp.Message.Items.Select(i => $"{i.AddDateUtc:yyyy-MM-dd} — {i.Category}: {i.Amount:0.##}" +
-            (string.IsNullOrWhiteSpace(i.Comment) ? "" : $" ({i.Comment})"));
+        IEnumerable<string> lines = response.Message.Items.Select(
+            i => BotTexts.ExpenseLine(i.AddDateUtc, i.Category, i.Amount, i.Comment));
+        string text = $"{BotTexts.LastExpensesHeader}\n{string.Join("\n", lines)}";
 
-        string text = "Последние траты:\n" + string.Join("\n", lines);
         await botClient.SendMessage(chatId, text, cancellationToken: cancellationToken);
     }
 
@@ -184,9 +196,8 @@ internal class UpdateProcessor
         await _stateStorage.SetStateAsync(chatId, UserState.WaitAddExpense);
         await botClient.SendMessage
         (
-            chatId: chatId,
-            text: "Введите категорию, сумму и комментарий (опционально), например:\n<b>Топливо 1500 Лукойл</b>\n" +
-                "Для отмены напишите: <b>/cancel</b>",
+            chatId,
+            BotTexts.StartExpensePrompt,
             parseMode: ParseMode.Html,
             replyMarkup: new ReplyKeyboardRemove()
         );
@@ -197,41 +208,40 @@ internal class UpdateProcessor
         if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/cancel")
         {
             await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
-            await botClient.SendMessage(msg.Chat.Id, "⛔️ Действие отменено", cancellationToken: cancellationToken);
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.Cancelled, cancellationToken: cancellationToken);
             return;
         }
 
         string? input = msg.Text?.Trim();
         if (string.IsNullOrWhiteSpace(input))
         {
-            await botClient.SendMessage(msg.Chat.Id, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel",
-                cancellationToken: cancellationToken);
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.EmptyInput, cancellationToken: cancellationToken);
             return;
         }
 
         string[] parts = input.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
         {
-            await botClient.SendMessage(msg.Chat.Id, "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: " +
-                "<b>Топливо 1500 Лукойл</b>", parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.BadFormat, parseMode: ParseMode.Html,
+                cancellationToken: cancellationToken);
             return;
         }
 
         // Категория
         string categoryText = parts[0];
-        if (!ExpenseCategoryParser.TryParse(categoryText, out var category))
+        if (!ExpenseCategories.TryNormalize(categoryText, out string? category))
         {
-            await botClient.SendMessage(msg.Chat.Id, $"Такой категории нет. Доступные:\n" +
-                $"<b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>\nДля отмены напишите: /cancel",
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.CategoryNotFound(ExpenseCategories.All()),
                 parseMode: ParseMode.Html, cancellationToken: cancellationToken);
             return;
         }
 
         // Сумма
-        if (!decimal.TryParse(parts[1], NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) || amount <= 0)
+        if (!decimal.TryParse(parts[1], System.Globalization.NumberStyles.Number,
+            System.Globalization.CultureInfo.InvariantCulture, out var amount) || amount <= 0)
         {
-            await botClient.SendMessage(msg.Chat.Id, "Некорректная сумма. Введите положительное число\n" +
-                "Для отмены напишите: /cancel", parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+            await botClient.SendMessage(msg.Chat.Id, BotTexts.BadAmount, parseMode: ParseMode.Html,
+                cancellationToken: cancellationToken);
             return;
         }
 
@@ -245,8 +255,7 @@ internal class UpdateProcessor
         await botClient.SendMessage
         (
             msg.Chat.Id,
-            $"Трата <b>{amount}₽</b> добавлена в категорию <b>{categoryText}</b>" +
-                $"{(comment != null ? $"\nКомментарий: {comment}" : "")}",
+            BotTexts.ExpenseAdded(amount, category, comment),
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken
         );
