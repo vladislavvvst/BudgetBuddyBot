@@ -2,9 +2,9 @@
 
 internal class ExpensesRepository
 {
-    private readonly ExpenseDbContext _dbContext;
+    private readonly ApplicationDbContext _dbContext;
 
-    public ExpensesRepository(ExpenseDbContext dbContext)
+    public ExpensesRepository(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
     }

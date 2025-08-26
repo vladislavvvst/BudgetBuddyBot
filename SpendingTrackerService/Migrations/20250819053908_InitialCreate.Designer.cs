@@ -11,7 +11,7 @@ using SpendingTrackerService.Database;
 
 namespace SpendingTrackerService.Migrations
 {
-    [DbContext(typeof(ExpenseDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250819053908_InitialCreate")]
     partial class InitialCreate
     {

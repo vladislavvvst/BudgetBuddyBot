@@ -1,15 +1,13 @@
-﻿using Microsoft.Extensions.Options;
-using RabbitMqMessaging;
-using RabbitMqMessaging.Publisher;
+﻿using MassTransit;
+using Microsoft.Extensions.Options;
+using SharedTypes;
 using Telegram.Bot;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Entities;
 using TgApiService.Options;
-using SharedTypes;
 
 namespace TgApiService.Services;
 
@@ -18,22 +16,20 @@ internal class UpdateHandler : IUpdateHandler
     private readonly ILogger<UpdateHandler> _logger;
     private readonly ITelegramBotClient _botClient;
     private readonly IOptions<TelegramOptions> _tgOptions;
-    private readonly IOptions<RabbitMqOptions> _mqOptions;
     private readonly IUserStateStorage _stateStorage;
-    private readonly IMessagePublisher _publisher;
+    private readonly ISendEndpointProvider _sendProvider;
 
     public UpdateHandler
     (
         ILogger<UpdateHandler> logger, ITelegramBotClient botClient, IOptions<TelegramOptions> tgOptions,
-        IOptions<RabbitMqOptions> mqOptions, IUserStateStorage stateStorage, IMessagePublisher publisher
+        ISendEndpointProvider sendProvider, IUserStateStorage stateStorage
     )
     {
         _logger = logger;
         _botClient = botClient;
         _tgOptions = tgOptions;
-        _mqOptions = mqOptions;
         _stateStorage = stateStorage;
-        _publisher = publisher;
+        _sendProvider = sendProvider;
     }
 
     public async Task HandleErrorAsync
@@ -43,7 +39,7 @@ internal class UpdateHandler : IUpdateHandler
     {
         _logger.LogError("HandleError: {Exception}", exception);
 
-        if (exception is RequestException)
+        if (exception is Telegram.Bot.Exceptions.RequestException)
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
     }
 
@@ -53,22 +49,22 @@ internal class UpdateHandler : IUpdateHandler
 
         await (update switch
         {
-            { Message: { } message } => OnMessage(message),
-            { CallbackQuery: { } callbackQuery } => OnCallbackQuery(callbackQuery),
+            { Message: { } message } => OnMessage(message, cancellationToken),
+            { CallbackQuery: { } callbackQuery } => OnCallbackQuery(callbackQuery, cancellationToken),
             _ => UnknownUpdateHandlerAsync(update)
         });
     }
 
-    private async Task OnMessage(Message msg)
+    private async Task OnMessage(Message msg, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Receive message type: {MessageType}", msg.Type);
-        await MessageHandlerAsync(msg);
+        await MessageHandlerAsync(msg, cancellationToken);
     }
 
-    private async Task OnCallbackQuery(CallbackQuery callbackQuery)
+    private async Task OnCallbackQuery(CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Received inline keyboard callback from: {CallbackQueryId}", callbackQuery.Id);
-        await _botClient.AnswerCallbackQuery(callbackQuery.Id);
+        await _botClient.AnswerCallbackQuery(callbackQuery.Id, cancellationToken: cancellationToken);
 
         if (!BotMenuMap.TryParseActionKey(callbackQuery.Data, out var action))
         {
@@ -98,34 +94,36 @@ internal class UpdateHandler : IUpdateHandler
                 await StartExpenseFlow(chatId);
                 break;
             case BotMenuAction.ShowStats:
-                await _botClient.SendMessage(chatId, "Здесь будет статистика");
+                await _botClient.SendMessage(chatId, "Здесь будет статистика", cancellationToken: cancellationToken);
                 break;
             case BotMenuAction.ShowCategories:
-                await ShowCategoriesHandlerAsync(chatId);
+                await ShowCategoriesHandlerAsync(chatId, cancellationToken);
                 break;
             case BotMenuAction.ShowAllExpenses:
-                await _botClient.SendMessage(chatId, "Вот ваши траты: ...");
+                await _botClient.SendMessage(chatId, "Вот ваши траты: ...", cancellationToken: cancellationToken);
                 break;
             case BotMenuAction.Settings:
-                await _botClient.SendMessage(chatId, "Настройки бота ");
+                await _botClient.SendMessage(chatId, "Настройки бота ", cancellationToken: cancellationToken);
                 break;
             default:
-                await _botClient.SendMessage(chatId, "Неизвестная команда");
+                await _botClient.SendMessage(chatId, "Неизвестная команда", cancellationToken: cancellationToken);
                 break;
         }
     }
 
-    private async Task MessageHandlerAsync(Message msg)
+    private async Task MessageHandlerAsync(Message msg, CancellationToken cancellationToken)
     {
         if (msg.Chat.Id != _tgOptions.Value.UserId)
         {
-            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца");
+            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Этот бот только для владельца",
+                cancellationToken: cancellationToken);
             return;
         }
 
         if (msg.Chat.Type != ChatType.Private)
         {
-            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях");
+            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Доступ запрещён! Бот работает только в личных сообщениях",
+                cancellationToken: cancellationToken);
             return;
         }
 
@@ -137,7 +135,7 @@ internal class UpdateHandler : IUpdateHandler
 
         UserState state = await _stateStorage.GetStateAsync(msg.Chat.Id);
         if (state == UserState.WaitAddExpense)
-            await AddExpenseHandlerAsync(msg);
+            await AddExpenseHandlerAsync(msg, cancellationToken);
 
         return;
     }
@@ -148,12 +146,12 @@ internal class UpdateHandler : IUpdateHandler
             chatId, "Выберите действие:", parseMode: ParseMode.Html, replyMarkup: BuildMainMenuInline);
     }
 
-    private async Task ShowCategoriesHandlerAsync(long chatId)
+    private async Task ShowCategoriesHandlerAsync(long chatId, CancellationToken cancellationToken)
     {
         await _botClient.SendMessage(
             chatId,
             text: $"Список категорий: <b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>",
-            parseMode: ParseMode.Html);
+            parseMode: ParseMode.Html, cancellationToken: cancellationToken);
     }
 
     private Task UnknownUpdateHandlerAsync(Update update)
@@ -175,19 +173,20 @@ internal class UpdateHandler : IUpdateHandler
         );
     }
 
-    private async Task AddExpenseHandlerAsync(Message msg)
+    private async Task AddExpenseHandlerAsync(Message msg, CancellationToken cancellationToken)
     {
         if (msg.Text?.Trim().ToLower(System.Globalization.CultureInfo.CurrentCulture) == "/cancel")
         {
             await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
-            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Действие отменено");
+            await _botClient.SendMessage(msg.Chat.Id, "⛔️ Действие отменено", cancellationToken: cancellationToken);
             return;
         }
 
         string? input = msg.Text?.Trim();
         if (string.IsNullOrWhiteSpace(input))
         {
-            await _botClient.SendMessage(msg.Chat.Id, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel");
+            await _botClient.SendMessage(msg.Chat.Id, "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel",
+                cancellationToken: cancellationToken);
             return;
         }
 
@@ -195,7 +194,7 @@ internal class UpdateHandler : IUpdateHandler
         if (parts.Length < 2)
         {
             await _botClient.SendMessage(msg.Chat.Id, "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: " +
-                "<b>Топливо 1500 Лукойл</b>", parseMode: ParseMode.Html);
+                "<b>Топливо 1500 Лукойл</b>", parseMode: ParseMode.Html, cancellationToken: cancellationToken);
             return;
         }
 
@@ -205,7 +204,7 @@ internal class UpdateHandler : IUpdateHandler
         {
             await _botClient.SendMessage(msg.Chat.Id, $"Такой категории нет. Доступные:\n" +
                 $"<b>{string.Join(", ", ExpenseCategoryParser.AllDisplayNames())}</b>\nДля отмены напишите: /cancel",
-                parseMode: ParseMode.Html);
+                parseMode: ParseMode.Html, cancellationToken: cancellationToken);
             return;
         }
 
@@ -213,19 +212,15 @@ internal class UpdateHandler : IUpdateHandler
         if (!decimal.TryParse(parts[1].Replace(',', '.'), out var amount) || amount <= 0)
         {
             await _botClient.SendMessage(msg.Chat.Id, "Некорректная сумма. Введите положительное число\n" +
-                "Для отмены напишите: /cancel", parseMode: ParseMode.Html);
+                "Для отмены напишите: /cancel", parseMode: ParseMode.Html, cancellationToken: cancellationToken);
             return;
         }
 
         // Комментарий
         string? comment = parts.Length > 2 ? parts[2] : null;
 
-        // Публикация сообщения в очередь RabbitMQ
-        await _publisher.PublishAsync
-        (
-            new AddExpenseMessage(category, amount, comment),
-            _mqOptions.Value.AddExpenseQueueName
-        );
+        // Публикация сообщения в очередь
+        await _sendProvider.Send<AddExpense>(new(category, amount, comment), cancellationToken);
 
         await _stateStorage.SetStateAsync(msg.Chat.Id, UserState.None);
         await _botClient.SendMessage
@@ -233,7 +228,8 @@ internal class UpdateHandler : IUpdateHandler
             msg.Chat.Id,
             $"Трата <b>{amount}₽</b> добавлена в категорию <b>{categoryText}</b>" +
                 $"{(comment != null ? $"\nКомментарий: {comment}" : "")}",
-            parseMode: ParseMode.Html
+            parseMode: ParseMode.Html,
+            cancellationToken: cancellationToken
         );
     }
 

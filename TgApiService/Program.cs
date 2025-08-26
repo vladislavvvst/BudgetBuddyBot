@@ -1,5 +1,6 @@
+using MassTransit;
 using Microsoft.Extensions.Options;
-using RabbitMqMessaging;
+using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using TgApiService.Options;
@@ -14,6 +15,7 @@ internal class Program
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
         builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.Telegram));
+        builder.Services.Configure<MessageBrokerOptions>(builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
 
         builder.Services.AddHttpClient("tg_bot_client").RemoveAllLoggers()
             .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
@@ -24,10 +26,29 @@ internal class Program
                 return new TelegramBotClient(options, httpClient);
             });
 
+        builder.Services.AddMassTransit(busConfigurator =>
+        {
+            busConfigurator.SetKebabCaseEndpointNameFormatter();
+
+            busConfigurator.UsingRabbitMq((context, configuration) =>
+            {
+                MessageBrokerOptions? messageBrokerOptions = context.GetService<IOptions<MessageBrokerOptions>>()?.Value;
+                ArgumentNullException.ThrowIfNull(messageBrokerOptions);
+
+                configuration.Host(messageBrokerOptions.HostName, h =>
+                {
+                    h.Username(messageBrokerOptions.UserName);
+                    h.Password(messageBrokerOptions.Password);
+                });
+
+                EndpointConvention.Map<AddExpense>(new Uri($"queue:{messageBrokerOptions.AddExpenseQueueName}"));
+
+                configuration.ConfigureEndpoints(context);
+            });
+        });
+
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
-
-        builder.Services.AddRabbitMqMessaging(builder.Configuration);
 
         builder.Services.AddScoped<IUpdateHandler, UpdateHandler>();
         builder.Services.AddHostedService<BotHostedService>();

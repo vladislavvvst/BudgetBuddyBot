@@ -1,5 +1,7 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using RabbitMqMessaging;
+using Microsoft.Extensions.Options;
+using SharedTypes;
 using SpendingTrackerService.Database;
 using SpendingTrackerService.Services;
 
@@ -9,17 +11,42 @@ internal class Program
 {
     public static void Main(string[] args)
     {
-        var builder = Host.CreateApplicationBuilder(args);
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-        builder.Services.AddDbContext<ExpenseDbContext>(
-            options => { options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ExpenseDbContext))); });
+        builder.Services.AddDbContext<ApplicationDbContext>(
+            options => { options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ApplicationDbContext))); });
 
-        builder.Services.AddRabbitMqMessaging(builder.Configuration);
+        builder.Services.Configure<MessageBrokerOptions>(builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
 
-        builder.Services.AddScoped<ExpensesRepository>();
-        builder.Services.AddHostedService<SpendTrackerService>();
+        builder.Services.AddMassTransit(busConfigurator =>
+        {
+            busConfigurator.SetKebabCaseEndpointNameFormatter();
 
-        var host = builder.Build();
+            busConfigurator.AddConsumer<AddExpenseConsumer>();
+
+            busConfigurator.UsingRabbitMq((context, configuration) =>
+            {
+                MessageBrokerOptions? messageBrokerOptions = context.GetService<IOptions<MessageBrokerOptions>>()?.Value;
+                ArgumentNullException.ThrowIfNull(messageBrokerOptions);
+
+                configuration.Host(messageBrokerOptions.HostName, h =>
+                {
+                    h.Username(messageBrokerOptions.UserName);
+                    h.Password(messageBrokerOptions.Password);
+                });
+
+                configuration.ReceiveEndpoint(messageBrokerOptions.AddExpenseQueueName, e =>
+                {
+                    e.ConfigureConsumer<AddExpenseConsumer>(context);
+                    e.PrefetchCount = 4;
+                    e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2)));
+                });
+
+                configuration.ConfigureEndpoints(context);
+            });
+        });
+
+        IHost host = builder.Build();
         host.Run();
     }
 }

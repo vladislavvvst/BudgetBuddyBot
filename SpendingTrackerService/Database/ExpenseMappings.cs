@@ -4,7 +4,7 @@ namespace SpendingTrackerService.Database;
 
 internal static class ExpenseMapping
 {
-    public static ExpenseEntity ToEntity(this AddExpenseMessage msg) => new()
+    public static ExpenseEntity ToEntity(this AddExpense msg) => new()
     {
         Category = msg.Category.ToString(),
         Amount = msg.Amount,

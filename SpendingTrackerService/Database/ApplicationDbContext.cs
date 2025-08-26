@@ -2,11 +2,11 @@
 
 namespace SpendingTrackerService.Database;
 
-internal class ExpenseDbContext : DbContext
+internal class ApplicationDbContext : DbContext
 {
     public DbSet<ExpenseEntity> Expenses => Set<ExpenseEntity>();
 
-    public ExpenseDbContext(DbContextOptions<ExpenseDbContext> options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -10,7 +10,7 @@ using SpendingTrackerService.Database;
 
 namespace SpendingTrackerService.Migrations
 {
-    [DbContext(typeof(ExpenseDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     partial class ExpenseDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
