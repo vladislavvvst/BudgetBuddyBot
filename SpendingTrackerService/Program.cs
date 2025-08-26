@@ -23,6 +23,7 @@ internal class Program
             busConfigurator.SetKebabCaseEndpointNameFormatter();
 
             busConfigurator.AddConsumer<AddExpenseConsumer>();
+            busConfigurator.AddConsumer<GetExpensesConsumer>();
 
             busConfigurator.UsingRabbitMq((context, configuration) =>
             {
@@ -39,6 +40,15 @@ internal class Program
                 {
                     e.ConfigureConsumer<AddExpenseConsumer>(context);
                     e.PrefetchCount = 4;
+                    e.ConcurrentMessageLimit = 2;
+                    e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2)));
+                });
+
+                configuration.ReceiveEndpoint(messageBrokerOptions.GetExpensesQueueName, e =>
+                {
+                    e.ConfigureConsumer<GetExpensesConsumer>(context);
+                    e.PrefetchCount = 4;
+                    e.ConcurrentMessageLimit = 2;
                     e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2)));
                 });
 

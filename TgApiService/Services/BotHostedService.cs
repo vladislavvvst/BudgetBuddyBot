@@ -4,16 +4,20 @@ using Telegram.Bot.Types;
 
 namespace TgApiService.Services;
 
-internal class BotHostedService : BackgroundService, IUpdateHandler
+internal class BotHostedService : BackgroundService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<BotHostedService> _logger;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IUpdateHandler _updateHandler;
 
-    public BotHostedService(ITelegramBotClient botClient, IServiceScopeFactory scopeFactory, ILogger<BotHostedService> logger)
+    public BotHostedService
+    (
+        ITelegramBotClient botClient, IUpdateHandler updateHandler,
+        ILogger<BotHostedService> logger
+    )
     {
         _logger = logger;
-        _scopeFactory = scopeFactory;
+        _updateHandler = updateHandler;
         _botClient = botClient;
     }
 
@@ -28,11 +32,9 @@ internal class BotHostedService : BackgroundService, IUpdateHandler
                 ReceiverOptions receiverOptions = new() { DropPendingUpdates = true, AllowedUpdates = [] };
                 User me = await _botClient.GetMe(stoppingToken);
 
-                _logger.LogInformation("Start receiving updates for {BotName}", me.Username ?? "My Awesome Bot");
-
                 await _botClient.ReceiveAsync
                 (
-                    updateHandler: this,
+                    updateHandler: _updateHandler,
                     receiverOptions: receiverOptions,
                     cancellationToken: stoppingToken
                 );
@@ -43,19 +45,5 @@ internal class BotHostedService : BackgroundService, IUpdateHandler
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
-    }
-
-    public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var h = scope.ServiceProvider.GetRequiredService<IUpdateHandler>();
-        await h.HandleUpdateAsync(botClient, update, cancellationToken);
-    }
-
-    public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var h = scope.ServiceProvider.GetRequiredService<IUpdateHandler>();
-        await h.HandleErrorAsync(botClient, exception, source, cancellationToken);
     }
 }

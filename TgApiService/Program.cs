@@ -20,37 +20,40 @@ internal class Program
         builder.Services.AddHttpClient("tg_bot_client").RemoveAllLoggers()
             .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
             {
-                TelegramOptions? telegramOptions = sp.GetService<IOptions<TelegramOptions>>()?.Value;
-                ArgumentNullException.ThrowIfNull(telegramOptions);
-                TelegramBotClientOptions options = new(telegramOptions.Token);
+                TelegramOptions? tgOptions = sp.GetService<IOptions<TelegramOptions>>()?.Value;
+                ArgumentNullException.ThrowIfNull(tgOptions);
+                TelegramBotClientOptions options = new(tgOptions.Token);
                 return new TelegramBotClient(options, httpClient);
             });
 
-        builder.Services.AddMassTransit(busConfigurator =>
+        builder.Services.AddMassTransit(busCfg =>
         {
-            busConfigurator.SetKebabCaseEndpointNameFormatter();
+            MessageBrokerOptions? mbOptions =
+                builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker).Get<MessageBrokerOptions>();
+            ArgumentNullException.ThrowIfNull(mbOptions);
 
-            busConfigurator.UsingRabbitMq((context, configuration) =>
+            busCfg.SetKebabCaseEndpointNameFormatter();
+
+            busCfg.AddRequestClient<GetExpenses>(new Uri($"queue:{mbOptions.GetExpensesQueueName}"));
+
+            busCfg.UsingRabbitMq((context, configuration) =>
             {
-                MessageBrokerOptions? messageBrokerOptions = context.GetService<IOptions<MessageBrokerOptions>>()?.Value;
-                ArgumentNullException.ThrowIfNull(messageBrokerOptions);
-
-                configuration.Host(messageBrokerOptions.HostName, h =>
+                configuration.Host(mbOptions.HostName, h =>
                 {
-                    h.Username(messageBrokerOptions.UserName);
-                    h.Password(messageBrokerOptions.Password);
+                    h.Username(mbOptions.UserName);
+                    h.Password(mbOptions.Password);
                 });
-
-                EndpointConvention.Map<AddExpense>(new Uri($"queue:{messageBrokerOptions.AddExpenseQueueName}"));
-
                 configuration.ConfigureEndpoints(context);
             });
+
+            EndpointConvention.Map<AddExpense>(new Uri($"queue:{mbOptions.AddExpenseQueueName}"));
         });
 
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
 
-        builder.Services.AddScoped<IUpdateHandler, UpdateHandler>();
+        builder.Services.AddScoped<UpdateProcessor>();
+        builder.Services.AddSingleton<IUpdateHandler, UpdateHandler>();
         builder.Services.AddHostedService<BotHostedService>();
 
         IHost host = builder.Build();
