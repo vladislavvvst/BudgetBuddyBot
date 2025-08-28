@@ -53,7 +53,7 @@ internal class ApplicationDbContext : DbContext
             entity.Property(x => x.IsDeleted).IsRequired();
             entity.Property(x => x.IsSystem).IsRequired();
             entity.Property(x => x.AddedAtUtc).HasDefaultValueSql("now()").IsRequired();
-            entity.Property(x => x.RequestId).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.RequestId).HasMaxLength(128).IsRequired(false);
 
             entity.HasIndex(x => x.UserId);
 
