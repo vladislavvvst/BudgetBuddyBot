@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.Extensions.Options;
 using SharedTypes;
 using Telegram.Bot;
@@ -34,14 +34,17 @@ internal class Program
 
             busCfg.SetKebabCaseEndpointNameFormatter();
 
-            // �����
-            busCfg.AddRequestClient<AddExpenseRequest>();
-            busCfg.AddRequestClient<GetExpensesRequest>();
+            // Установка таймаута для клиентов запросов
+            TimeSpan requestTimeout = TimeSpan.FromSeconds(10);
 
-            // ���������
-            busCfg.AddRequestClient<AddCategoryRequest>();
-            busCfg.AddRequestClient<GetCategoriesRequest>();
-            busCfg.AddRequestClient<DeleteCategoryRequest>();
+            // Траты
+            busCfg.AddRequestClient<AddExpenseRequest>(requestTimeout);
+            busCfg.AddRequestClient<GetExpensesRequest>(requestTimeout);
+
+            // Категории
+            busCfg.AddRequestClient<AddCategoryRequest>(requestTimeout);
+            busCfg.AddRequestClient<GetCategoriesRequest>(requestTimeout);
+            busCfg.AddRequestClient<DeleteCategoryRequest>(requestTimeout);
 
             busCfg.UsingRabbitMq((context, configuration) =>
             {
@@ -50,6 +53,13 @@ internal class Program
                     h.Username(mbOptions.UserName);
                     h.Password(mbOptions.Password);
                 });
+
+                configuration.UseMessageRetry(retry => retry.Exponential(
+                    retryLimit: 5,
+                    minInterval: TimeSpan.FromSeconds(1),
+                    maxInterval: TimeSpan.FromSeconds(30),
+                    intervalDelta: TimeSpan.FromSeconds(3)));
+
                 configuration.ConfigureEndpoints(context);
             });
         });

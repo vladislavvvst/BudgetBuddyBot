@@ -41,6 +41,17 @@ internal class Program
                     h.Password(messageBrokerOptions.Password);
                 });
 
+                configuration.UseMessageRetry(retry => retry.Exponential(
+                    retryLimit: 5,
+                    minInterval: TimeSpan.FromSeconds(1),
+                    maxInterval: TimeSpan.FromSeconds(30),
+                    intervalDelta: TimeSpan.FromSeconds(3)));
+
+                configuration.UseInMemoryOutbox(context);
+
+                configuration.PrefetchCount = 32;
+                configuration.ConcurrentMessageLimit = 16;
+
                 configuration.ConfigureEndpoints(context);
             });
         });
