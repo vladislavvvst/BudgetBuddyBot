@@ -64,7 +64,6 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
                 Name = name,
                 IsSystem = false,
                 IsDeleted = false,
-                AddedAtUtc = DateTimeOffset.UtcNow,
                 RequestId = request.RequestId
             });
 

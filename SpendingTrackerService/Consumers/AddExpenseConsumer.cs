@@ -59,7 +59,6 @@ internal class AddExpenseConsumer : IConsumer<AddExpenseRequest>
             CategoryId = request.CategoryId,
             Amount = request.Amount,
             Comment = request.Comment,
-            AddedAtUtc = DateTimeOffset.UtcNow,
             RequestId = request.RequestId
         };
 
