@@ -5,8 +5,7 @@ internal enum BotMenuAction
     AddExpense,
     ShowStats,
     ShowCategories,
-    ShowAllExpenses,
-    Settings
+    ShowAllExpenses
 }
 
 internal static class BotMenuMap
@@ -17,7 +16,6 @@ internal static class BotMenuMap
         public const string Stats = "📊 Статистика";
         public const string Categories = "🗂️ Категории";
         public const string AllExpenses = "📝 Все траты";
-        public const string Settings = "⚙️ Настройки";
     }
 
     private static readonly Dictionary<BotMenuAction, string> _actionToText = new()
@@ -25,8 +23,7 @@ internal static class BotMenuMap
         { BotMenuAction.AddExpense, BotMenu.AddExpense },
         { BotMenuAction.ShowStats, BotMenu.Stats },
         { BotMenuAction.ShowCategories, BotMenu.Categories },
-        { BotMenuAction.ShowAllExpenses, BotMenu.AllExpenses },
-        { BotMenuAction.Settings, BotMenu.Settings }
+        { BotMenuAction.ShowAllExpenses, BotMenu.AllExpenses }
     };
 
     private static readonly Dictionary<string, BotMenuAction> _textToAction =

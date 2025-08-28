@@ -13,14 +13,25 @@ internal sealed class UpdateHandler : IUpdateHandler
         _scopeFactory = scopeFactory;
     }
 
-    public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    public async Task HandleUpdateAsync
+    (
+        ITelegramBotClient botClient,
+        Update update,
+        CancellationToken cancellationToken
+    )
     {
         using IServiceScope scope = _scopeFactory.CreateScope();
         UpdateProcessor processor = scope.ServiceProvider.GetRequiredService<UpdateProcessor>();
         await processor.HandleUpdateAsync(botClient, update, cancellationToken);
     }
 
-    public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
+    public async Task HandleErrorAsync
+    (
+        ITelegramBotClient botClient,
+        Exception exception,
+        HandleErrorSource source,
+        CancellationToken cancellationToken
+    )
     {
         using IServiceScope scope = _scopeFactory.CreateScope();
         UpdateProcessor processor = scope.ServiceProvider.GetRequiredService<UpdateProcessor>();

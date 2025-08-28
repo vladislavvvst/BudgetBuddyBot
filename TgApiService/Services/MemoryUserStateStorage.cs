@@ -5,7 +5,6 @@ namespace TgApiService.Services;
 internal class MemoryUserStateStorage : IUserStateStorage
 {
     private readonly IMemoryCache _cache;
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
     public MemoryUserStateStorage(IMemoryCache cache)
     {
@@ -17,12 +16,12 @@ internal class MemoryUserStateStorage : IUserStateStorage
         if (_cache.TryGetValue(chatId, out UserState userState))
             return Task.FromResult(userState);
 
-        return Task.FromResult(UserState.None);
+        return Task.FromResult(UserState.MainMenu);
     }
 
     public Task SetStateAsync(long chatId, UserState state)
     {
-        _cache.Set(chatId, state, CacheDuration);
+        _cache.Set(chatId, state);
         return Task.CompletedTask;
     }
 }

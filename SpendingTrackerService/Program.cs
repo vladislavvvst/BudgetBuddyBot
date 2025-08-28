@@ -2,6 +2,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SharedTypes;
+using SpendingTrackerService.Consumers;
 using SpendingTrackerService.Database;
 using SpendingTrackerService.Services;
 
@@ -18,14 +19,18 @@ internal class Program
 
         builder.Services.Configure<MessageBrokerOptions>(builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
 
-        builder.Services.AddMassTransit(busConfigurator =>
+        builder.Services.AddMassTransit(busCfg =>
         {
-            busConfigurator.SetKebabCaseEndpointNameFormatter();
+            busCfg.SetKebabCaseEndpointNameFormatter();
 
-            busConfigurator.AddConsumer<AddExpenseConsumer>();
-            busConfigurator.AddConsumer<GetExpensesConsumer>();
+            busCfg.AddConsumer<AddExpenseConsumer>();
+            busCfg.AddConsumer<GetExpensesConsumer>();
 
-            busConfigurator.UsingRabbitMq((context, configuration) =>
+            busCfg.AddConsumer<AddCategoryConsumer>();
+            busCfg.AddConsumer<GetCategoriesConsumer>();
+            busCfg.AddConsumer<DeleteCategoryConsumer>();
+
+            busCfg.UsingRabbitMq((context, configuration) =>
             {
                 MessageBrokerOptions? messageBrokerOptions = context.GetService<IOptions<MessageBrokerOptions>>()?.Value;
                 ArgumentNullException.ThrowIfNull(messageBrokerOptions);
@@ -36,25 +41,11 @@ internal class Program
                     h.Password(messageBrokerOptions.Password);
                 });
 
-                configuration.ReceiveEndpoint(messageBrokerOptions.AddExpenseQueueName, e =>
-                {
-                    e.ConfigureConsumer<AddExpenseConsumer>(context);
-                    e.PrefetchCount = 4;
-                    e.ConcurrentMessageLimit = 2;
-                    e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2)));
-                });
-
-                configuration.ReceiveEndpoint(messageBrokerOptions.GetExpensesQueueName, e =>
-                {
-                    e.ConfigureConsumer<GetExpensesConsumer>(context);
-                    e.PrefetchCount = 4;
-                    e.ConcurrentMessageLimit = 2;
-                    e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(2)));
-                });
-
                 configuration.ConfigureEndpoints(context);
             });
         });
+
+        builder.Services.AddScoped<ICategorySeeder, CategorySeeder>();
 
         IHost host = builder.Build();
         host.Run();

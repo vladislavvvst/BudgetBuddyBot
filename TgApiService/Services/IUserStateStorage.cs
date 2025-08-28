@@ -1,6 +1,14 @@
 ﻿namespace TgApiService.Services;
 
-internal enum UserState { None, WaitAddExpense };
+internal enum UserState
+{
+    MainMenu = 0,
+    ExpenseAdd_WaitExpense = 1,
+
+    CategoryMenu = 10,
+    CategoryAdd_WaitName = 11,
+    CategoryDelete_WaitChoice = 12
+};
 
 internal interface IUserStateStorage
 {

@@ -34,7 +34,14 @@ internal class Program
 
             busCfg.SetKebabCaseEndpointNameFormatter();
 
-            busCfg.AddRequestClient<GetExpenses>(new Uri($"queue:{mbOptions.GetExpensesQueueName}"));
+            // Траты
+            busCfg.AddRequestClient<AddExpenseRequest>();
+            busCfg.AddRequestClient<GetExpensesRequest>();
+
+            // Категории
+            busCfg.AddRequestClient<AddCategoryRequest>();
+            busCfg.AddRequestClient<GetCategoriesRequest>();
+            busCfg.AddRequestClient<DeleteCategoryRequest>();
 
             busCfg.UsingRabbitMq((context, configuration) =>
             {
@@ -45,14 +52,14 @@ internal class Program
                 });
                 configuration.ConfigureEndpoints(context);
             });
-
-            EndpointConvention.Map<AddExpense>(new Uri($"queue:{mbOptions.AddExpenseQueueName}"));
         });
 
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
 
         builder.Services.AddScoped<UpdateProcessor>();
+        builder.Services.AddScoped<ISpendingTrackerGateway, SpendingTrackerGateway>();
+
         builder.Services.AddSingleton<IUpdateHandler, UpdateHandler>();
         builder.Services.AddHostedService<BotHostedService>();
 
