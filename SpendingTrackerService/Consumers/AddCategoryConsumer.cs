@@ -32,13 +32,19 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
             await context.RespondAsync(new AddCategoryResponse(false));
             return;
         }
+
         string name = CollapseSpaces(rawName);
+        string normalized = name.ToLowerInvariant();
 
         try
         {
-            // Уже есть активная с таким именем?
+            // Уже есть активная с таким именем? (сравнение без учета регистра, "Дом" == "дом" -> true)
             bool activeExists = await _dbContext.Categories
-                .AnyAsync(c => c.UserId == request.UserId && !c.IsDeleted && c.Name == name, ct);
+                .AsNoTracking()
+                .AnyAsync(c => c.UserId == request.UserId &&
+                               !c.IsDeleted &&
+                               c.Name.ToLower() == normalized, ct);
+
             if (activeExists)
             {
                 await context.RespondAsync(new AddCategoryResponse(false));
@@ -46,11 +52,30 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
             }
 
             // Если ранее удаляли пользовательскую с тем же именем — вернем обратно
-            CategoryEntity? deleted = await _dbContext.Categories.SingleOrDefaultAsync(
-                c => c.UserId == request.UserId && c.IsDeleted && !c.IsSystem && c.Name == name, ct);
+            CategoryEntity? deleted = await _dbContext.Categories
+                .Where(c => c.UserId == request.UserId &&
+                            c.IsDeleted &&
+                            !c.IsSystem &&
+                            c.Name.ToLower() == normalized)
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefaultAsync(ct);
 
+            // Восстанавливаем удаленную
             if (deleted is not null)
             {
+                // Проверка на конфликт, т.к. между выборкой и сохранением могла быть гонка
+                bool conflict = await _dbContext.Categories
+                    .AsNoTracking()
+                    .AnyAsync(c => c.UserId == request.UserId &&
+                                   !c.IsDeleted &&
+                                   c.Name.ToLower() == normalized, ct);
+
+                if (conflict)
+                {
+                    await context.RespondAsync(new AddCategoryResponse(false));
+                    return;
+                }
+
                 deleted.IsDeleted = false;
                 await _dbContext.SaveChangesAsync(ct);
                 await context.RespondAsync(new AddCategoryResponse(true));
@@ -58,16 +83,18 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
             }
 
             // Создаем новую пользовательскую
-            _dbContext.Categories.Add(new CategoryEntity
+            CategoryEntity newCategory = new()
             {
                 UserId = request.UserId,
-                Name = name,
+                Name = Capitalize(name),
                 IsSystem = false,
                 IsDeleted = false,
                 RequestId = request.RequestId
-            });
+            };
 
+            _dbContext.Categories.Add(newCategory);
             await _dbContext.SaveChangesAsync(ct);
+
             await context.RespondAsync(new AddCategoryResponse(true));
         }
         catch (DbUpdateException ex)
@@ -76,7 +103,10 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
             _logger.LogWarning(ex, "Unique conflict while adding category '{Name}' for user {UserId}", name, request.UserId);
 
             bool nowExists = await _dbContext.Categories
-                .AnyAsync(c => c.UserId == request.UserId && !c.IsDeleted && c.Name == name, ct);
+                .AsNoTracking()
+                .AnyAsync(c => c.UserId == request.UserId &&
+                               !c.IsDeleted &&
+                               c.Name.ToLower() == normalized, ct);
 
             await context.RespondAsync(new AddCategoryResponse(nowExists));
         }
@@ -88,4 +118,14 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
     }
 
     private static string CollapseSpaces(string s) => Regex.Replace(s, @"\s{2,}", " ").Trim();
+
+    // Простая капитализация: "доМ" -> "Дом"
+    private static string Capitalize(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return input;
+
+        input = input.Trim();
+        return char.ToUpperInvariant(input[0]) + input[1..].ToLowerInvariant();
+    }
 }

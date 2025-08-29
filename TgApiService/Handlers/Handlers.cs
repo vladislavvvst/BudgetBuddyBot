@@ -428,15 +428,11 @@ internal static class Handlers
         if (string.IsNullOrWhiteSpace(input))
             return false;
 
-#pragma warning disable CA1307 // Используйте StringComparison, чтобы ясно указать намерение
         string s = input.Trim().Replace(" ", "").Replace("\u00A0", "");
-#pragma warning restore CA1307 // Используйте StringComparison, чтобы ясно указать намерение
         int dot = s.LastIndexOf('.'), comma = s.LastIndexOf(',');
 
         if (dot >= 0 && comma >= 0)
-#pragma warning disable CA1307 // Используйте StringComparison, чтобы ясно указать намерение
             s = comma > dot ? s.Replace(".", "").Replace(',', '.') : s.Replace(",", "");
-#pragma warning restore CA1307 // Используйте StringComparison, чтобы ясно указать намерение
         else if (comma >= 0)
             s = s.Replace(',', '.');
 
