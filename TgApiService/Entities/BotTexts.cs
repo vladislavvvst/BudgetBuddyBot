@@ -1,82 +1,155 @@
 ﻿using System.Globalization;
 using System.Net;
 
-namespace TgApiService.Entities;
-
-internal static class BotTexts
+namespace TgApiService.Entities
 {
-    public const string CatMenu = "cat:menu";
-    public const string CatStart = "cat:start";
-    public const string CatAbout = "cat:about";
-    public const string CatAdd = "cat:add";
-    public const string CatDel = "cat:del";
-    public const string CatDelPickPrefix = "cat:del:"; // + {categoryCode}
-    public const string NavBack = "nav:back";
+    internal static class BotTexts
+    {
+        // ==============
+        // Callback keys / prefixes
+        // ==============
+        internal static class Keys
+        {
+            public const string NavBack = "nav:back";
 
-    public const string Start = "/start";
-    public const string Menu = "/menu";
-    public const string About = "/about";
-    public const string Cancel = "/cancel";
+            public const string CatMenu = "cat:menu";
+            public const string CatStart = "cat:start";
+            public const string CatAbout = "cat:about";
+            public const string CatAdd = "cat:add";
+            public const string CatDel = "cat:del";
+            public const string CatDelPickPrefix = "cat:del:";  // + {categoryId}
 
-    public const string StartText = "Привет! Я помогу вести расходы :)";
-    public const string AccessDeniedOwner = "⛔️ Доступ запрещён! Этот бот только для владельца";
-    public const string AccessDeniedPrivate = "⛔️ Доступ запрещён! Бот работает только в личных сообщениях";
-    public const string Cancelled = "⛔️ Действие отменено";
-    public const string EmptyInput = "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel";
-    public const string BadFormat = "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: <b>Топливо 1500 Лукойл</b>";
-    public const string BadAmount = "Некорректная сумма. Введите положительное число\nДля отмены напишите: /cancel";
-    public const string UnknownCmd = "Неизвестная команда";
-    public const string StatsPlaceholder = "Здесь будет статистика";
-    public const string SettingsPlaceholder = "Настройки бота";
-    public const string ChooseAction = "Выберите действие:";
-    public const string NoExpenses = "Пока нет трат";
-    public const string LastExpensesHeader = "Последние траты:";
-    public const string ErrorAddingExpense = "Ошибка при добавлении траты. Попробуйте ещё раз";
-    public const string ErrorAddingCategory = "Ошибка при добавлении категории. Попробуйте ещё раз";
-    public const string CategoryAdd = "Введите название новой категории\n(или /cancel для отмены):";
-    public const string CategoryDeleted = "Категория удалена";
-    public const string ErrorDeletingCategory = "Ошибка при удалении категории. Попробуйте ещё раз";
-    public const string NoCategories = "Нет категорий для удаления";
-    public const string ChooseCategoryToDelete = "Выберите категорию для удаления:";
-    public const string EmptyNameCategory = "Пустое имя категории. Попробуйте ещё раз\nДля отмены напишите: /cancel";
-    public const string PushButton = "Сейчас нужно нажать кнопку на экране ⬇️";
+            public const string ExpPickPrefix = "exp:pick:";    // + {categoryId}
+        }
 
-    public const string ErrorProcessing = "Сервис упал при обработке. Попробуйте позже";
-    public const string ErrorTimeout = "Таймаут запроса. Попробуйте ещё раз";
+        // ==============
+        // Slash-команды
+        // ==============
+        internal static class Commands
+        {
+            public const string Start = "/start";
+            public const string Menu = "/menu";
+            public const string About = "/about";
+            public const string Cancel = "/cancel";
+        }
 
-    public const string StartExpensePrompt =
-        "Введите категорию, сумму и комментарий (опционально), например:\n" +
-        "<b>Топливо 1500 Лукойл</b>\nДля отмены напишите: <b>/cancel</b>";
+        // ==============
+        // Кнопки
+        // ==============
+        internal static class Buttons
+        {
+            public const string Stats = "📊 Статистика";
+            public const string AddExpense = "➕ Добавить трату";
+            public const string LastExpenses = "📝 Последние траты";
+            public const string Categories = "🗂️ Категории";
+            public const string Add = "➕ Добавить";
+            public const string Delete = "🗑️ Удалить";
+            public const string Back = "⬅️ Назад";
+        }
 
-    public static string CategoriesList(IEnumerable<string> names) =>
-        $"Список категорий:\n<b>{HtmlCategoriesJoin(names)}</b>";
+        // ==============
+        // Сообщения / подсказки
+        // ==============
+        internal static class Prompts
+        {
+            public const string ChooseAction = "Выберите действие:";
+            public const string StatsPlaceholder = "Здесь будет статистика";
+            public const string SettingsPlaceholder = "Настройки бота";
 
-    public static string CategotyAdded(string name) =>
-        $"Категория <b>{Html(name)}</b> добавлена";
+            public const string CategoryAdd = "Введите название новой категории\n(или /cancel для отмены):";
+            public const string ChooseCategory = "Выберите категорию:";
+            public const string ChooseCategoryToDelete = "Выберите категорию для удаления:";
 
-    public static string CategoryNotFound(IEnumerable<string> names) =>
-        $"Такой категории нет. Доступные:\n<b>{HtmlJoin(names)}</b>\nДля отмены напишите: /cancel";
+            public const string StartText = "Привет! Я помогу вести расходы :)";
+            public const string AboutBot =
+                "<b>BudgetBuddyBot</b> — бот для личного учета расходов\n\n" +
+                "Что умеет:\n" +
+                "• ➕ Добавлять траты\n" +
+                "• 📝 Показывать последние траты\n" +
+                "• 🗂️ Показывать список категорий\n" +
+                "• 🗂️ Изменять список категорий\n" +
+                "• 📊 Показывать статистику\n";
 
-    public static string ExpenseAdded(decimal amount, string category, string? comment) =>
-        $"Трата <b>{amount.ToString("0.##", CultureInfo.InvariantCulture)}₽</b> " +
-        $"добавлена в категорию <b>{Html(category)}</b>" +
-        (string.IsNullOrWhiteSpace(comment) ? "" : $"\nКомментарий: {Html(comment!)}");
+            public const string StartExpensePrompt =
+                "Введите сумму и комментарий (опционально), например:\n" +
+                "<b>1500 Озон</b>\nДля отмены напишите: <b>/cancel</b>";
+        }
 
-    public static string ExpenseLine(DateTimeOffset addDate, string category, decimal amount, string? comment) =>
-        $"{addDate:yyyy-MM-dd} — {Html(category)}: " +
-        $"{amount.ToString("0.##", CultureInfo.InvariantCulture)}" +
-        (string.IsNullOrWhiteSpace(comment) ? "" : $" ({Html(comment!)})");
+        // ==============
+        // Сообщения об ошибках / статусы
+        // ==============
+        internal static class Errors
+        {
+            public const string AccessDeniedOwner = "⛔️ Доступ запрещён! Этот бот только для владельца";
+            public const string AccessDeniedPrivate = "⛔️ Доступ запрещён! Бот работает только в личных сообщениях";
+            public const string Cancelled = "⛔️ Действие отменено";
+            public const string EmptyInput = "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel";
+            public const string EmptyNameCategory = "Пустое имя категории. Попробуйте ещё раз\nДля отмены напишите: /cancel";
+            public const string BadFormat = "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: <b>Топливо 1500 Лукойл</b>";
+            public const string BadAmount = "Некорректная сумма. Введите положительное число\nДля отмены напишите: /cancel";
+            public const string UnknownCmd = "Неизвестная команда";
+            public const string ErrorAddingExpense = "Ошибка при добавлении траты. Попробуйте ещё раз";
+            public const string ErrorAddingCategory = "Ошибка при добавлении категории. Попробуйте ещё раз";
+            public const string ErrorDeletingCategory = "Ошибка при удалении категории. Попробуйте ещё раз";
+            public const string ErrorProcessing = "Сервис упал при обработке. Попробуйте позже";
+            public const string ErrorTimeout = "Таймаут запроса. Попробуйте ещё раз";
+            public const string ErrorNameCategory = "Категория #";
+        }
 
-    private static string Html(string s) => WebUtility.HtmlEncode(s);
-    private static string HtmlJoin(IEnumerable<string> parts) => Html(string.Join(", ", parts));
-    private static string HtmlCategoriesJoin(IEnumerable<string> parts) => Html(string.Join("\n", parts));
+        // ==============
+        // Нейтральные сообщения
+        // ==============
+        internal static class Info
+        {
+            public const string NoExpenses = "Пока нет трат";
+            public const string LastExpensesHeader = "Последние траты:";
+            public const string NoCategories = "Нет категорий для удаления";
+            public const string CategoryNotFoundForAddExp = "Категории не найдены. Сначала добавьте категорию";
+            public const string PushButton = "Сейчас нужно нажать кнопку на экране ⬇️";
+            public const string CategoryDeleted = "Категория удалена";
+        }
 
-    public const string AboutBot =
-        "<b>BudgetBuddyBot</b> — бот для личного учета расходов\n\n" +
-        "Что умеет:\n" +
-        "• ➕ Добавлять траты\n" +
-        "• 📝 Показывать последние траты\n" +
-        "• 🗂️ Показывать список категорий\n" +
-        "• 🗂️ Изменять список категорий\n" +
-        "• 📊 Показывать статистику\n";
+        // ==============
+        // Форматированные генераторы текстов
+        // ==============
+        public static string CategoriesList(IEnumerable<string> names) =>
+            $"Список категорий:\n<b>{HtmlLines(names)}</b>";
+
+        public static string CategoryAdded(string name) =>
+            $"Категория <b>{HtmlText(name)}</b> добавлена";
+
+        public static string ExpenseAdded(decimal amount, string category, string? comment) =>
+            $"Трата <b>{amount.ToString("0.##", CultureInfo.InvariantCulture)}₽</b> " +
+            $"добавлена в категорию <b>{HtmlText(category)}</b>" +
+            (string.IsNullOrWhiteSpace(comment) ? string.Empty : $"\nКомментарий: {HtmlText(comment!)}");
+
+        public static string ExpenseLine(DateTimeOffset addDate, string category, decimal amount, string? comment) =>
+            $"{addDate:yyyy-MM-dd} — {HtmlText(category)}: " +
+            $"{amount.ToString("0.##", CultureInfo.InvariantCulture)}" +
+            (string.IsNullOrWhiteSpace(comment) ? string.Empty : $" ({HtmlText(comment!)})");
+
+        // ==============
+        // HTML helpers для Telegram
+        // ==============
+        // Экранируем только то, что отображается пользователю (текст), НЕ url в href
+        public static string HtmlText(string s) => WebUtility.HtmlEncode(s);
+
+        public static string Bold(string s) => $"<b>{HtmlText(s)}</b>";
+
+        public static string Code(string s) => $"<code>{HtmlText(s)}</code>";
+
+        // Ссылка: если text не задан — показываем сам url
+        public static string Link(string url, string? text = null)
+        {
+            // href оставляем как есть, но текст внутри <a> энкодим
+            string visible = string.IsNullOrWhiteSpace(text) ? url : text!;
+            return $"<a href=\"{url}\">{HtmlText(visible)}</a>";
+        }
+
+        public static string HtmlJoin(IEnumerable<string> parts, string separator) =>
+            HtmlText(string.Join(separator, parts));
+
+        public static string HtmlLines(IEnumerable<string> lines) =>
+            HtmlText(string.Join("\n", lines));
+    }
 }

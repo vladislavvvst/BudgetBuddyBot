@@ -13,30 +13,32 @@ internal static class BotRouter
     private static readonly Dictionary<(UserState, UpdateKind), Func<HandlerContext, CancellationToken, Task>> _byState
         = new()
         {
-            { (UserState.ExpenseAdd_WaitExpense,    UpdateKind.Message),        Handlers.Expense_WaitExpenseAsync           },
-            { (UserState.CategoryMenu,              UpdateKind.CallbackQuery),  Handlers.Category_MenuCallbackAsync         },
-            { (UserState.CategoryDelete_WaitChoice, UpdateKind.CallbackQuery),  Handlers.Category_DeleteChoiceCallbackAsync },
-            { (UserState.CategoryAdd_WaitName,      UpdateKind.Message),        Handlers.Category_AddNameAsync              },
+            { (UserState.ExpenseAdd_PickCategory,       UpdateKind.CallbackQuery),  UserStateHandlers.Expense_PickCategoryCallbackAsync  },
+            { (UserState.ExpenseAdd_WaitAmountComment,  UpdateKind.CallbackQuery),  UserStateHandlers.Expense_AmountBackCallbackAsync    },
+            { (UserState.ExpenseAdd_WaitAmountComment,  UpdateKind.Message),        UserStateHandlers.Expense_WaitAmountCommentAsync     },
+            { (UserState.CategoryMenu,                  UpdateKind.CallbackQuery),  UserStateHandlers.Category_MenuCallbackAsync         },
+            { (UserState.CategoryDelete_WaitChoice,     UpdateKind.CallbackQuery),  UserStateHandlers.Category_DeleteChoiceCallbackAsync },
+            { (UserState.CategoryAdd_WaitName,          UpdateKind.Message),        UserStateHandlers.Category_AddNameAsync              },
         };
 
     // Команды/кнопки, доступные из любого состояния
     private static readonly Dictionary<string, Func<HandlerContext, CancellationToken, Task>> _commands
         = new(StringComparer.OrdinalIgnoreCase)
         {
-            { BotTexts.Menu,   Handlers.MainMenuAsync   },
-            { BotTexts.Start,  Handlers.StartAsync      },
-            { BotTexts.About,  Handlers.AboutAsync      },
-            { BotTexts.Cancel, Handlers.CancelAsync     },
+            { BotTexts.Commands.Menu,   CommandsHandlers.MainMenuAsync   },
+            { BotTexts.Commands.Start,  CommandsHandlers.StartAsync      },
+            { BotTexts.Commands.About,  CommandsHandlers.AboutAsync      },
+            { BotTexts.Commands.Cancel, CommandsHandlers.CancelAsync     },
         };
 
     // Топ-уровень инлайн-меню (BotMenuMap)
     private static readonly Dictionary<BotMenuAction, Func<HandlerContext, CancellationToken, Task>> _topMenu
         = new()
         {
-            { BotMenuAction.AddExpense,         Handlers.Expense_StartAsync     },
-            { BotMenuAction.ShowStats,          Handlers.StatsPlaceholderAsync  },
-            { BotMenuAction.ShowCategories,     Handlers.Category_MenuAsync     },
-            { BotMenuAction.ShowAllExpenses,    Handlers.Expenses_ListAsync     },
+            { BotMenuAction.AddExpense,         TopMenuHandlers.Expense_ShowCategoriesAsync    },
+            { BotMenuAction.ShowStats,          TopMenuHandlers.Stats_PlaceholderAsync         },
+            { BotMenuAction.ShowCategories,     TopMenuHandlers.Category_MenuAsync             },
+            { BotMenuAction.ShowAllExpenses,    TopMenuHandlers.Expenses_ListAsync             },
         };
 
     public static UpdateKind GetKind(in Update update) =>
@@ -77,7 +79,7 @@ internal static class BotRouter
             return;
         }
 
-        await Handlers.MainMenuAsync(context, ct);
+        await CommandsHandlers.MainMenuAsync(context, ct);
     }
 
     private static long ChatId(Update update) =>

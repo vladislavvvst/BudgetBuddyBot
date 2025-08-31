@@ -3,7 +3,6 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgApiService.Entities;
 using TgApiService.Handlers;
 using TgApiService.Options;
 
@@ -49,10 +48,7 @@ internal class UpdateProcessor
             long? chatId = TryGetChatId(update);
 
             if (chatId is long id)
-                await botClient.SendMessage(id, !IsPrivate(update)
-                    ? BotTexts.AccessDeniedPrivate
-                    : BotTexts.AccessDeniedOwner,
-                cancellationToken: ct);
+                await botClient.SendMessage(id, "Пока не для всех :(", cancellationToken: ct);
             return;
         }
 
