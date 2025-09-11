@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using SharedTypes;
 using SpendingTrackerService.Consumers;
 using SpendingTrackerService.Database;
-using SpendingTrackerService.Services;
 
 namespace SpendingTrackerService;
 
@@ -22,6 +21,8 @@ internal class Program
         builder.Services.AddMassTransit(busCfg =>
         {
             busCfg.SetKebabCaseEndpointNameFormatter();
+
+            busCfg.AddConsumer<EnsureUserDefaultsConsumer>();
 
             busCfg.AddConsumer<AddExpenseConsumer>();
             busCfg.AddConsumer<GetExpensesConsumer>();
@@ -55,8 +56,6 @@ internal class Program
                 configuration.ConfigureEndpoints(context);
             });
         });
-
-        builder.Services.AddScoped<ICategorySeeder, CategorySeeder>();
 
         IHost host = builder.Build();
         host.Run();

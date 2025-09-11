@@ -1,19 +1,24 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using SharedTypes;
 using SpendingTrackerService.Database;
 using SpendingTrackerService.Database.Entities;
 
-namespace SpendingTrackerService.Services;
+namespace SpendingTrackerService.Consumers;
 
-internal sealed class CategorySeeder : ICategorySeeder
+internal class EnsureUserDefaultsConsumer : IConsumer<SeedCategoriesRequest>
 {
-    private readonly ILogger<CategorySeeder> _logger;
+    private readonly ILogger<EnsureUserDefaultsConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;
 
-    public CategorySeeder(ILogger<CategorySeeder> logger, ApplicationDbContext dbContext)
+    public EnsureUserDefaultsConsumer(ILogger<EnsureUserDefaultsConsumer> logger, ApplicationDbContext dbContext)
         => (_logger, _dbContext) = (logger, dbContext);
 
-    public async Task EnsureDefaultsAsync(long userId, CancellationToken ct)
+    public async Task Consume(ConsumeContext<SeedCategoriesRequest> context)
     {
+        long userId = context.Message.UserId;
+        CancellationToken ct = context.CancellationToken;
+
         // Какие системные категории уже есть у пользователя
         HashSet<string> existingSet = (await _dbContext.Categories
             .Where(c => c.UserId == userId && c.IsSystem && !c.IsDeleted)

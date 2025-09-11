@@ -1,7 +1,7 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
+using TgApiService.Cache;
 using TgApiService.Entities;
-using TgApiService.Services;
 
 namespace TgApiService.Handlers;
 

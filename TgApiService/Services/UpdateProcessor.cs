@@ -3,6 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TgApiService.Cache;
 using TgApiService.Handlers;
 using TgApiService.Options;
 
@@ -12,13 +13,13 @@ internal class UpdateProcessor
 {
     private readonly ILogger<UpdateProcessor> _logger;
     private readonly IOptions<TelegramOptions> _tgOptions;
-    private readonly IUserStateStorage _stateStorage;
+    private readonly IStateCache _stateStorage;
     private readonly ISpendingTrackerGateway _tracker;
 
     public UpdateProcessor
     (
         ILogger<UpdateProcessor> logger, IOptions<TelegramOptions> tgOptions,
-        IUserStateStorage stateStorage, ISpendingTrackerGateway tracker
+        IStateCache stateStorage, ISpendingTrackerGateway tracker
     )
     {
         _logger = logger;

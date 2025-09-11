@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
+using TgApiService.Cache;
 using TgApiService.Options;
 using TgApiService.Services;
 
@@ -37,6 +38,9 @@ internal class Program
             // Установка таймаута для клиентов запросов
             TimeSpan requestTimeout = TimeSpan.FromSeconds(10);
 
+            // Инициализация
+            busCfg.AddRequestClient<SeedCategoriesRequest>(requestTimeout);
+
             // Траты
             busCfg.AddRequestClient<AddExpenseRequest>(requestTimeout);
             busCfg.AddRequestClient<GetExpensesRequest>(requestTimeout);
@@ -65,7 +69,7 @@ internal class Program
         });
 
         builder.Services.AddMemoryCache();
-        builder.Services.AddSingleton<IUserStateStorage, MemoryUserStateStorage>();
+        builder.Services.AddSingleton<IStateCache, StateMemoryCache>();
 
         builder.Services.AddScoped<UpdateProcessor>();
         builder.Services.AddScoped<ISpendingTrackerGateway, SpendingTrackerGateway>();

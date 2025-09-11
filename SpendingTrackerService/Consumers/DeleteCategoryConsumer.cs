@@ -9,10 +9,10 @@ namespace SpendingTrackerService.Consumers;
 internal class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 {
     private readonly ILogger<DeleteCategoryConsumer> _logger;
-    private readonly ApplicationDbContext _db;
+    private readonly ApplicationDbContext _dbContext;
 
-    public DeleteCategoryConsumer(ILogger<DeleteCategoryConsumer> logger, ApplicationDbContext db) =>
-        (_logger, _db) = (logger, db);
+    public DeleteCategoryConsumer(ILogger<DeleteCategoryConsumer> logger, ApplicationDbContext dbContext)
+        => (_logger, _dbContext) = (logger, dbContext);
 
     public async Task Consume(ConsumeContext<DeleteCategoryRequest> context)
     {
@@ -23,7 +23,7 @@ internal class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
             request.UserId, request.CategoryId, request.RequestId);
 
         // Ищем категорию пользователя
-        CategoryEntity? category = await _db.Categories
+        CategoryEntity? category = await _dbContext.Categories
             .SingleOrDefaultAsync(c => c.UserId == request.UserId && c.Id == request.CategoryId, ct);
 
         // Нет такой / уже удалена / системная — удалять нельзя
@@ -36,7 +36,7 @@ internal class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
         try
         {
             category.IsDeleted = true;
-            await _db.SaveChangesAsync(ct);
+            await _dbContext.SaveChangesAsync(ct);
 
             _logger.LogInformation("Category soft-deleted: user={UserId}, categoryId={CategoryId}",
                 request.UserId, request.CategoryId);

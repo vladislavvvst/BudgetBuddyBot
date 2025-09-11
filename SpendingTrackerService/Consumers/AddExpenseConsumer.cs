@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using SharedTypes;
 using SpendingTrackerService.Database;
 using SpendingTrackerService.Database.Entities;
-using SpendingTrackerService.Services;
 
 namespace SpendingTrackerService.Consumers;
 
@@ -11,10 +10,9 @@ internal class AddExpenseConsumer : IConsumer<AddExpenseRequest>
 {
     private readonly ILogger<AddExpenseConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;
-    private readonly ICategorySeeder _seeder;
 
-    public AddExpenseConsumer(ILogger<AddExpenseConsumer> logger, ApplicationDbContext dbContext, ICategorySeeder seeder)
-        => (_logger, _dbContext, _seeder) = (logger, dbContext, seeder);
+    public AddExpenseConsumer(ILogger<AddExpenseConsumer> logger, ApplicationDbContext dbContext)
+        => (_logger, _dbContext) = (logger, dbContext);
 
     public async Task Consume(ConsumeContext<AddExpenseRequest> context)
     {
@@ -23,9 +21,6 @@ internal class AddExpenseConsumer : IConsumer<AddExpenseRequest>
 
         _logger.LogInformation("AddExpense: user={UserId}, catId={CategoryId}, amount={Amount}, req={RequestId}",
             request.UserId, request.CategoryId, request.Amount, request.RequestId);
-
-        // Гарантируем системные категории пользователю
-        await _seeder.EnsureDefaultsAsync(request.UserId, ct);
 
         if (request.Amount <= 0)
         {

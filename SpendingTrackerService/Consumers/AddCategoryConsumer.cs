@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using SharedTypes;
 using SpendingTrackerService.Database;
 using SpendingTrackerService.Database.Entities;
-using SpendingTrackerService.Services;
 using System.Text.RegularExpressions;
 
 namespace SpendingTrackerService.Consumers;
@@ -12,18 +11,14 @@ internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
 {
     private readonly ILogger<AddCategoryConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;
-    private readonly ICategorySeeder _seeder;
 
-    public AddCategoryConsumer(ILogger<AddCategoryConsumer> logger, ApplicationDbContext dbContext, ICategorySeeder seeder) =>
-        (_logger, _dbContext, _seeder) = (logger, dbContext, seeder);
+    public AddCategoryConsumer(ILogger<AddCategoryConsumer> logger, ApplicationDbContext dbContext)
+        => (_logger, _dbContext) = (logger, dbContext);
 
     public async Task Consume(ConsumeContext<AddCategoryRequest> context)
     {
         AddCategoryRequest request = context.Message;
         CancellationToken ct = context.CancellationToken;
-
-        // Гарантируем системные категории пользователю
-        await _seeder.EnsureDefaultsAsync(request.UserId, ct);
 
         // Нормализация ввода
         string? rawName = (request.Name ?? string.Empty).Trim();

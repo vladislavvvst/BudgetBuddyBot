@@ -4,8 +4,8 @@ using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TgApiService.Cache;
 using TgApiService.Entities;
-using TgApiService.Services;
 
 namespace TgApiService.Handlers;
 
@@ -40,8 +40,7 @@ internal static class UserStateHandlers
         }
 
         await context.StateStorage.SetStateAsync(chatId, UserState.ExpenseAdd_WaitAmountComment);
-        await context.StateStorage.SetTempAsync(chatId, "expense.selectedCategoryId",
-            categoryId.ToString(CultureInfo.InvariantCulture));
+        await context.StateStorage.SetCategoryIdAsync(chatId, categoryId.ToString(CultureInfo.InvariantCulture));
 
         await context.Bot.SendMessage
         (
@@ -64,7 +63,7 @@ internal static class UserStateHandlers
 
         if (data == BotTexts.Keys.NavBack)
         {
-            await context.StateStorage.RemoveTempAsync(chatId, "expense.selectedCategoryId");
+            await context.StateStorage.RemoveCategoryIdAsync(chatId);
             await context.StateStorage.SetStateAsync(chatId, UserState.ExpenseAdd_PickCategory);
             await TopMenuHandlers.Expense_ShowCategoriesAsync(context, ct);
             return;
@@ -83,7 +82,7 @@ internal static class UserStateHandlers
         if (string.Equals(text, BotTexts.Keys.NavBack, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(text, BotTexts.Buttons.Back, StringComparison.OrdinalIgnoreCase))
         {
-            await context.StateStorage.RemoveTempAsync(chatId, "expense.selectedCategoryId");
+            await context.StateStorage.RemoveCategoryIdAsync(chatId);
             await TopMenuHandlers.Expense_ShowCategoriesAsync(context, ct);
             return;
         }
@@ -94,7 +93,7 @@ internal static class UserStateHandlers
             return;
         }
 
-        string? categoryIdStr = await context.StateStorage.GetTempAsync(chatId, "expense.selectedCategoryId");
+        string? categoryIdStr = await context.StateStorage.GetCategoryIdAsync(chatId);
         if (string.IsNullOrEmpty(categoryIdStr) || !long.TryParse(categoryIdStr, out long categoryId))
         {
             // потеряли контекст — начнём заново
@@ -142,7 +141,7 @@ internal static class UserStateHandlers
         }
         finally
         {
-            await context.StateStorage.RemoveTempAsync(chatId, "expense.selectedCategoryId");
+            await context.StateStorage.RemoveCategoryIdAsync(chatId);
         }
 
         await CommandsHandlers.MainMenuAsync(context, ct);
