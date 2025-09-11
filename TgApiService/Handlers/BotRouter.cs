@@ -72,7 +72,7 @@ internal static class BotRouter
         }
 
         // Внутренние шаги по состояниям
-        UserState userState = await context.StateStorage.GetStateAsync(ChatId(context.Update));
+        UserState userState = await context.StateCache.GetStateAsync(ChatId(context.Update));
         if (_byState.TryGetValue((userState, kind), out var handler))
         {
             await handler(context, ct);

@@ -8,7 +8,7 @@ namespace TgApiService.Handlers;
 internal readonly record struct HandlerContext
 (
     ILogger Logger,
-    IStateCache StateStorage,
+    IStateCache StateCache,
     ISpendingTrackerGateway Tracker,
     ITelegramBotClient Bot,
     Update Update

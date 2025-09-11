@@ -38,9 +38,6 @@ internal class Program
             // Установка таймаута для клиентов запросов
             TimeSpan requestTimeout = TimeSpan.FromSeconds(10);
 
-            // Инициализация
-            busCfg.AddRequestClient<SeedCategoriesRequest>(requestTimeout);
-
             // Траты
             busCfg.AddRequestClient<AddExpenseRequest>(requestTimeout);
             busCfg.AddRequestClient<GetExpensesRequest>(requestTimeout);

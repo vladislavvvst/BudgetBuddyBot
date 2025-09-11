@@ -39,8 +39,8 @@ internal static class UserStateHandlers
             return;
         }
 
-        await context.StateStorage.SetStateAsync(chatId, UserState.ExpenseAdd_WaitAmountComment);
-        await context.StateStorage.SetCategoryIdAsync(chatId, categoryId.ToString(CultureInfo.InvariantCulture));
+        await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAdd_WaitAmountComment);
+        await context.StateCache.SetCategoryIdAsync(chatId, categoryId.ToString(CultureInfo.InvariantCulture));
 
         await context.Bot.SendMessage
         (
@@ -63,8 +63,8 @@ internal static class UserStateHandlers
 
         if (data == BotTexts.Keys.NavBack)
         {
-            await context.StateStorage.RemoveCategoryIdAsync(chatId);
-            await context.StateStorage.SetStateAsync(chatId, UserState.ExpenseAdd_PickCategory);
+            await context.StateCache.RemoveCategoryIdAsync(chatId);
+            await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAdd_PickCategory);
             await TopMenuHandlers.Expense_ShowCategoriesAsync(context, ct);
             return;
         }
@@ -82,7 +82,7 @@ internal static class UserStateHandlers
         if (string.Equals(text, BotTexts.Keys.NavBack, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(text, BotTexts.Buttons.Back, StringComparison.OrdinalIgnoreCase))
         {
-            await context.StateStorage.RemoveCategoryIdAsync(chatId);
+            await context.StateCache.RemoveCategoryIdAsync(chatId);
             await TopMenuHandlers.Expense_ShowCategoriesAsync(context, ct);
             return;
         }
@@ -93,7 +93,7 @@ internal static class UserStateHandlers
             return;
         }
 
-        string? categoryIdStr = await context.StateStorage.GetCategoryIdAsync(chatId);
+        string? categoryIdStr = await context.StateCache.GetCategoryIdAsync(chatId);
         if (string.IsNullOrEmpty(categoryIdStr) || !long.TryParse(categoryIdStr, out long categoryId))
         {
             // потеряли контекст — начнём заново
@@ -114,7 +114,7 @@ internal static class UserStateHandlers
         try
         {
             string requestId = $"{chatId}:{msg.MessageId}";
-            AddExpenseRequest request = new AddExpenseRequest(chatId, categoryId, amount, comment, requestId);
+            AddExpenseRequest request = new(chatId, categoryId, amount, comment, requestId);
             AddExpenseResponse response = await context.Tracker.AddExpenseAsync(request, ct);
 
             if (response.Success)
@@ -141,7 +141,7 @@ internal static class UserStateHandlers
         }
         finally
         {
-            await context.StateStorage.RemoveCategoryIdAsync(chatId);
+            await context.StateCache.RemoveCategoryIdAsync(chatId);
         }
 
         await CommandsHandlers.MainMenuAsync(context, ct);
@@ -157,7 +157,7 @@ internal static class UserStateHandlers
 
         if (data == BotTexts.Keys.CatAdd)
         {
-            await context.StateStorage.SetStateAsync(chatId, UserState.CategoryAdd_WaitName);
+            await context.StateCache.SetStateAsync(chatId, UserState.CategoryAdd_WaitName);
             await context.Bot.SendMessage(chatId, BotTexts.Prompts.CategoryAdd,
                 replyMarkup: new ReplyKeyboardRemove(), cancellationToken: ct);
             return;
@@ -165,7 +165,7 @@ internal static class UserStateHandlers
 
         if (data == BotTexts.Keys.CatDel)
         {
-            await context.StateStorage.SetStateAsync(chatId, UserState.CategoryDelete_WaitChoice);
+            await context.StateCache.SetStateAsync(chatId, UserState.CategoryDelete_WaitChoice);
             await Category_ShowForDeleteAsync(context, chatId, ct);
             return;
         }

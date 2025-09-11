@@ -29,9 +29,3 @@ public sealed record AddExpenseResponse(bool Success);
 // Получение трат
 public sealed record GetExpensesRequest(long UserId, int Page = 1, int PageSize = 10);
 public sealed record GetExpensesResponse(long UserId, IReadOnlyList<ExpenseDto> Items, int Total);
-
-// ----- ИНИЦИАЛИЗАЦИЯ -----
-
-// Инициализация системных категорий пользователя
-public sealed record SeedCategoriesRequest(long UserId, string RequestId);
-public sealed record SeedCategoriesResponse(bool Success);

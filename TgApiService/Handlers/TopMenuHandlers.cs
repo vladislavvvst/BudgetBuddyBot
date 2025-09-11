@@ -1,7 +1,7 @@
 ﻿using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
-using TgApiService.Chache;
+using TgApiService.Cache;
 using TgApiService.Entities;
 
 namespace TgApiService.Handlers;
@@ -11,7 +11,7 @@ internal static class TopMenuHandlers
     public static async Task Expense_ShowCategoriesAsync(HandlerContext context, CancellationToken ct)
     {
         long chatId = ChatId(context);
-        await context.StateStorage.SetStateAsync(chatId, UserState.ExpenseAdd_PickCategory);
+        await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAdd_PickCategory);
 
         GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new GetCategoriesRequest(chatId), ct);
         IReadOnlyList<CategoryDto> categories = response.Items;
@@ -33,7 +33,7 @@ internal static class TopMenuHandlers
     public static async Task Category_MenuAsync(HandlerContext context, CancellationToken ct)
     {
         long chatId = ChatId(context);
-        await context.StateStorage.SetStateAsync(chatId, UserState.CategoryMenu);
+        await context.StateCache.SetStateAsync(chatId, UserState.CategoryMenu);
 
         GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new(chatId), ct);
         string text = BotTexts.CategoriesList(response.Items.Select(x => x.Name));

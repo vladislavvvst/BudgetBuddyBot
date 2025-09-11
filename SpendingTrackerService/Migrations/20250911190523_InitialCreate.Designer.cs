@@ -12,8 +12,8 @@ using SpendingTrackerService.Database;
 namespace SpendingTrackerService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250828131846_AddRequestIdToExpenses")]
-    partial class AddRequestIdToExpenses
+    [Migration("20250911190523_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

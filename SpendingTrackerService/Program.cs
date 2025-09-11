@@ -22,8 +22,6 @@ internal class Program
         {
             busCfg.SetKebabCaseEndpointNameFormatter();
 
-            busCfg.AddConsumer<EnsureUserDefaultsConsumer>();
-
             busCfg.AddConsumer<AddExpenseConsumer>();
             busCfg.AddConsumer<GetExpensesConsumer>();
 

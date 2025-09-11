@@ -9,7 +9,7 @@ internal static class CommandsHandlers
 {
     public static async Task MainMenuAsync(HandlerContext context, CancellationToken ct)
     {
-        await context.StateStorage.SetStateAsync(ChatId(context), UserState.MainMenu);
+        await context.StateCache.SetStateAsync(ChatId(context), UserState.MainMenu);
         await context.Bot.SendMessage(ChatId(context), BotTexts.Prompts.ChooseAction,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
             replyMarkup: BuildMainMenuInline, cancellationToken: ct);
@@ -28,7 +28,7 @@ internal static class CommandsHandlers
 
     public static async Task CancelAsync(HandlerContext context, CancellationToken ct)
     {
-        await context.StateStorage.SetStateAsync(ChatId(context), UserState.MainMenu);
+        await context.StateCache.SetStateAsync(ChatId(context), UserState.MainMenu);
         await context.Bot.SendMessage(ChatId(context), BotTexts.Errors.Cancelled, cancellationToken: ct);
         await MainMenuAsync(context, ct);
     }
