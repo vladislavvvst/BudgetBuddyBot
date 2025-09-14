@@ -47,6 +47,8 @@ internal class Program
             busCfg.AddRequestClient<GetCategoriesRequest>(requestTimeout);
             busCfg.AddRequestClient<DeleteCategoryRequest>(requestTimeout);
 
+            busCfg.AddConsumer<UserCategoriesChangedConsumer>();
+
             busCfg.UsingRabbitMq((context, configuration) =>
             {
                 configuration.Host(mbOptions.HostName, h =>

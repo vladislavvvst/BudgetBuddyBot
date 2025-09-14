@@ -1,5 +1,6 @@
 ﻿using SharedTypes;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Cache;
 using TgApiService.Entities;
@@ -8,13 +9,15 @@ namespace TgApiService.Handlers;
 
 internal static class TopMenuHandlers
 {
+    /// <summary>
+    /// Показывает меню добавления расхода - выбор категории
+    /// </summary>
     public static async Task Expense_ShowCategoriesAsync(HandlerContext context, CancellationToken ct)
     {
-        long chatId = ChatId(context);
+        long chatId = Utils.ChatId(context);
         await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAdd_PickCategory);
 
-        GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new GetCategoriesRequest(chatId), ct);
-        IReadOnlyList<CategoryDto> categories = response.Items;
+        IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
 
         if (categories.Count == 0)
         {
@@ -27,16 +30,22 @@ internal static class TopMenuHandlers
             replyMarkup: BuildCategoriesPickKb(categories), cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Показывает заглушку для статистики (в разработке)
+    /// </summary>
     public static async Task Stats_PlaceholderAsync(HandlerContext context, CancellationToken ct) =>
-        await context.Bot.SendMessage(ChatId(context), BotTexts.Prompts.StatsPlaceholder, cancellationToken: ct);
+        await context.Bot.SendMessage(Utils.ChatId(context), BotTexts.Prompts.StatsPlaceholder, cancellationToken: ct);
 
+    /// <summary>
+    /// Показывает список категорий и возможности редактирования (просмотр, добавление, удаление)
+    /// </summary>
     public static async Task Category_MenuAsync(HandlerContext context, CancellationToken ct)
     {
-        long chatId = ChatId(context);
+        long chatId = Utils.ChatId(context);
         await context.StateCache.SetStateAsync(chatId, UserState.CategoryMenu);
 
-        GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new(chatId), ct);
-        string text = BotTexts.CategoriesList(response.Items.Select(x => x.Name));
+        IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
+        string text = BotTexts.CategoriesList(categories.Select(x => x.Name));
 
         await context.Bot.SendMessage(chatId, text,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
@@ -44,9 +53,12 @@ internal static class TopMenuHandlers
             cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Показывает последние 10 расходов пользователя
+    /// </summary>
     public static async Task Expenses_ListAsync(HandlerContext context, CancellationToken ct)
     {
-        long chatId = ChatId(context);
+        long chatId = Utils.ChatId(context);
         GetExpensesResponse response = await context.Tracker.GetExpensesAsync(new(chatId, 1, 10), ct);
 
         if (response.Items.Count == 0)
@@ -55,7 +67,7 @@ internal static class TopMenuHandlers
             return;
         }
 
-        IReadOnlyList<CategoryDto> categories = await GetUserCategoriesAsync(context, chatId, ct);
+        IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
         Dictionary<long, string> byId = categories.ToDictionary(x => x.Id, x => x.Name);
 
         IEnumerable<string> lines = response.Items.Select(i =>
@@ -71,9 +83,6 @@ internal static class TopMenuHandlers
     }
 
     #region Utils
-
-    private static long ChatId(HandlerContext context) =>
-        context.Update.Message?.Chat.Id ?? context.Update.CallbackQuery!.Message!.Chat.Id;
 
     private static InlineKeyboardMarkup BuildCategoriesPickKb(IReadOnlyList<CategoryDto> categories)
     {
@@ -102,12 +111,6 @@ internal static class TopMenuHandlers
         [InlineKeyboardButton.WithCallbackData(BotTexts.Buttons.Delete, BotTexts.Keys.CatDel)],
         [InlineKeyboardButton.WithCallbackData(BotTexts.Buttons.Back, BotTexts.Keys.NavBack)]
     ]);
-
-    private static async Task<IReadOnlyList<CategoryDto>> GetUserCategoriesAsync(HandlerContext context, long userId, CancellationToken ct)
-    {
-        GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new GetCategoriesRequest(userId), ct);
-        return response.Items;
-    }
 
     #endregion
 }

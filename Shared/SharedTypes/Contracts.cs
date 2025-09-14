@@ -17,6 +17,9 @@ public sealed record AddCategoryResponse(bool Success);
 public sealed record DeleteCategoryRequest(long UserId, long CategoryId, string RequestId);
 public sealed record DeleteCategoryResponse(bool Success);
 
+// Оповещение о том, что категории пользователя изменились (добавлена/удалена категория)
+public sealed record UserCategoriesChangedNotification(long UserId, IReadOnlyList<CategoryDto> Items);
+
 // ----- ТРАТЫ -----
 
 // DTO траты

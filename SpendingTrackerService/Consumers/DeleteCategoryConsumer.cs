@@ -37,15 +37,17 @@ internal class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
         {
             category.IsDeleted = true;
             await _dbContext.SaveChangesAsync(ct);
+            await context.RespondAsync(new DeleteCategoryResponse(true));
 
             _logger.LogInformation("Category soft-deleted: user={UserId}, categoryId={CategoryId}",
                 request.UserId, request.CategoryId);
 
-            await context.RespondAsync(new DeleteCategoryResponse(true));
+            IReadOnlyList<CategoryDto> items = await GetCategoriesFromDbAsync(request.UserId, ct);
+            await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "DbUpdateException while deleting category user={UserId}, categoryId={CategoryId}",
+            _logger.LogWarning(ex, "DbUpdateException while deleting category user={UserId}, categoryId={CategoryId}",
                 request.UserId, request.CategoryId);
             await context.RespondAsync(new DeleteCategoryResponse(false));
         }
@@ -55,5 +57,15 @@ internal class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
                 request.UserId, request.CategoryId);
             await context.RespondAsync(new DeleteCategoryResponse(false));
         }
+    }
+
+    private async Task<IReadOnlyList<CategoryDto>> GetCategoriesFromDbAsync(long userId, CancellationToken ct)
+    {
+        return await _dbContext.Categories
+            .AsNoTracking()
+            .Where(c => c.UserId == userId && !c.IsDeleted)
+            .OrderBy(c => c.Name)
+            .Select(c => new CategoryDto(c.Id, c.Name, c.IsSystem))
+            .ToListAsync(ct);
     }
 }

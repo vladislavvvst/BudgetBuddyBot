@@ -11,6 +11,9 @@ namespace TgApiService.Handlers;
 
 internal static class UserStateHandlers
 {
+    /// <summary>
+    /// Обрабатывает выбор категории для нового расхода
+    /// </summary>
     public static async Task Expense_PickCategoryCallbackAsync(HandlerContext context, CancellationToken ct)
     {
         CallbackQuery cq = context.Update.CallbackQuery!;
@@ -53,6 +56,9 @@ internal static class UserStateHandlers
         );
     }
 
+    /// <summary>
+    /// Обрабатывает нажатие "Назад" при вводе суммы и комментария для нового расхода
+    /// </summary>
     public static async Task Expense_AmountBackCallbackAsync(HandlerContext context, CancellationToken ct)
     {
         CallbackQuery cq = context.Update.CallbackQuery!;
@@ -72,6 +78,9 @@ internal static class UserStateHandlers
         await context.Bot.SendMessage(chatId, BotTexts.Errors.UnknownCmd, cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Обрабатывает ввод суммы и комментария для нового расхода
+    /// </summary>
     public static async Task Expense_WaitAmountCommentAsync(HandlerContext context, CancellationToken ct)
     {
         Message msg = context.Update.Message!;
@@ -147,6 +156,9 @@ internal static class UserStateHandlers
         await CommandsHandlers.MainMenuAsync(context, ct);
     }
 
+    /// <summary>
+    /// Обрабатывает нажатия в меню категорий (просмотр, добавление, удаление)
+    /// </summary>
     public static async Task Category_MenuCallbackAsync(HandlerContext context, CancellationToken ct)
     {
         CallbackQuery cq = context.Update.CallbackQuery!;
@@ -179,6 +191,9 @@ internal static class UserStateHandlers
         await context.Bot.SendMessage(chatId, BotTexts.Errors.UnknownCmd, cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Обрабатывает выбор категории для удаления
+    /// </summary>
     public static async Task Category_DeleteChoiceCallbackAsync(HandlerContext context, CancellationToken ct)
     {
         CallbackQuery cq = context.Update.CallbackQuery!;
@@ -238,6 +253,9 @@ internal static class UserStateHandlers
         await context.Bot.SendMessage(chatId, BotTexts.Errors.UnknownCmd, cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Обрабатывает ввод названия новой категории
+    /// </summary>
     public static async Task Category_AddNameAsync(HandlerContext context, CancellationToken ct)
     {
         Message msg = context.Update.Message!;
@@ -296,11 +314,11 @@ internal static class UserStateHandlers
 
     private static InlineKeyboardMarkup BuildCategoriesDeleteKb(List<CategoryDto> categories)
     {
-        List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
+        List<InlineKeyboardButton[]> rows = [];
 
         for (int i = 0; i < categories.Count; i += 2)
         {
-            List<InlineKeyboardButton> row = new List<InlineKeyboardButton>(2)
+            List<InlineKeyboardButton> row = new(2)
             {
                 InlineKeyboardButton.WithCallbackData(
                     categories[i].Name,
@@ -327,9 +345,7 @@ internal static class UserStateHandlers
 
     private static async Task Category_ShowForDeleteAsync(HandlerContext context, long chatId, CancellationToken ct)
     {
-        GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new GetCategoriesRequest(chatId), ct);
-
-        List<CategoryDto> categories = response.Items.Where(x => !x.IsSystem).ToList();
+        List<CategoryDto> categories = (await Utils.GetUserCategories(context, ct)).Where(x => !x.IsSystem).ToList();
 
         if (categories.Count == 0)
         {

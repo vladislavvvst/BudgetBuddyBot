@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+using SharedTypes;
 
 namespace TgApiService.Cache;
 
@@ -68,8 +69,23 @@ internal class StateMemoryCache : IStateCache
         return Task.CompletedTask;
     }
 
-    // ----- UTILS -----
+    // Кэширование списка категорий пользователя
+    public Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId)
+    {
+        string key = BuildCategoriesKey(chatId);
+        _cache.TryGetValue(key, out IReadOnlyList<CategoryDto>? categories);
+        return Task.FromResult(categories ?? []);
+    }
 
+    public Task SetCategoriesAsync(long chatId, IReadOnlyList<CategoryDto> categories)
+    {
+        string cacheKey = BuildCategoriesKey(chatId);
+        _cache.Set(cacheKey, categories);
+        return Task.CompletedTask;
+    }
+
+    // ----- UTILS -----
+    private static string BuildCategoriesKey(long chatId) => $"user_categories:{chatId}";
     private static string BuildUserStateKey(long chatId) => $"user_state:{chatId}";
     private static string BuildTempKey(long chatId) => $"category_id:{chatId}";
     private static string BuildDefaultCategoriesKey(long chatId) => $"default_categories_seeded:{chatId}";

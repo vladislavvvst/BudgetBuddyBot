@@ -7,29 +7,41 @@ namespace TgApiService.Handlers;
 
 internal static class CommandsHandlers
 {
+    /// <summary>
+    /// Показывает главное меню бота
+    /// </summary>
     public static async Task MainMenuAsync(HandlerContext context, CancellationToken ct)
     {
-        await context.StateCache.SetStateAsync(ChatId(context), UserState.MainMenu);
-        await context.Bot.SendMessage(ChatId(context), BotTexts.Prompts.ChooseAction,
+        await context.StateCache.SetStateAsync(Utils.ChatId(context), UserState.MainMenu);
+        await context.Bot.SendMessage(Utils.ChatId(context), BotTexts.Prompts.ChooseAction,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
             replyMarkup: BuildMainMenuInline, cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Показывает приветственное сообщение и главное меню
+    /// </summary>
     public static async Task StartAsync(HandlerContext context, CancellationToken ct)
     {
-        await context.Bot.SendMessage(ChatId(context), BotTexts.Prompts.StartText,
+        await context.Bot.SendMessage(Utils.ChatId(context), BotTexts.Prompts.StartText,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, cancellationToken: ct);
         await MainMenuAsync(context, ct);
     }
 
+    /// <summary>
+    /// Показывает информацию о боте
+    /// </summary>
     public static async Task AboutAsync(HandlerContext context, CancellationToken ct) =>
-        await context.Bot.SendMessage(ChatId(context), BotTexts.Prompts.AboutBot,
+        await context.Bot.SendMessage(Utils.ChatId(context), BotTexts.Prompts.AboutBot,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, cancellationToken: ct);
 
+    /// <summary>
+    /// Показывает сообщение об отмене текущего действия и возвращает в главное меню
+    /// </summary>
     public static async Task CancelAsync(HandlerContext context, CancellationToken ct)
     {
-        await context.StateCache.SetStateAsync(ChatId(context), UserState.MainMenu);
-        await context.Bot.SendMessage(ChatId(context), BotTexts.Errors.Cancelled, cancellationToken: ct);
+        await context.StateCache.SetStateAsync(Utils.ChatId(context), UserState.MainMenu);
+        await context.Bot.SendMessage(Utils.ChatId(context), BotTexts.Errors.Cancelled, cancellationToken: ct);
         await MainMenuAsync(context, ct);
     }
 
@@ -42,9 +54,6 @@ internal static class CommandsHandlers
         [InlineKeyboardButton.WithCallbackData(BotTexts.Buttons.Categories, BotMenuMap.GetActionKey(BotMenuAction.ShowCategories))],
         [InlineKeyboardButton.WithCallbackData(BotTexts.Buttons.LastExpenses, BotMenuMap.GetActionKey(BotMenuAction.ShowAllExpenses))]
     ]);
-
-    private static long ChatId(HandlerContext context) =>
-        context.Update.Message?.Chat.Id ?? context.Update.CallbackQuery!.Message!.Chat.Id;
 
     #endregion
 }

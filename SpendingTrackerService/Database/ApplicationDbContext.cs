@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using SpendingTrackerService.Database.Entities;
 
 namespace SpendingTrackerService.Database;
@@ -77,5 +78,9 @@ internal class ApplicationDbContext : DbContext
             entity.HasAlternateKey(x => new { x.UserId, x.Id })
                   .HasName("AK_categories_user_id_id");
         });
+
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
     }
 }

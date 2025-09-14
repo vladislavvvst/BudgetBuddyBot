@@ -13,45 +13,52 @@ internal class Program
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-        builder.Services.AddDbContext<ApplicationDbContext>(
-            options => { options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ApplicationDbContext))); });
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        {
+            options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ApplicationDbContext)));
+        });
 
-        builder.Services.Configure<MessageBrokerOptions>(builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
+        builder.Services.Configure<MessageBrokerOptions>(
+            builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
 
         builder.Services.AddMassTransit(busCfg =>
         {
             busCfg.SetKebabCaseEndpointNameFormatter();
 
+            busCfg.AddEntityFrameworkOutbox<ApplicationDbContext>(outbox =>
+            {
+                outbox.QueryDelay = TimeSpan.FromSeconds(1);
+                outbox.UsePostgres();
+                outbox.UseBusOutbox();
+            });
+
             busCfg.AddConsumer<AddExpenseConsumer>();
             busCfg.AddConsumer<GetExpensesConsumer>();
-
             busCfg.AddConsumer<AddCategoryConsumer>();
             busCfg.AddConsumer<GetCategoriesConsumer>();
             busCfg.AddConsumer<DeleteCategoryConsumer>();
 
-            busCfg.UsingRabbitMq((context, configuration) =>
+            busCfg.UsingRabbitMq((context, cfg) =>
             {
-                MessageBrokerOptions? messageBrokerOptions = context.GetService<IOptions<MessageBrokerOptions>>()?.Value;
-                ArgumentNullException.ThrowIfNull(messageBrokerOptions);
+                MessageBrokerOptions? opts = context.GetService<IOptions<MessageBrokerOptions>>()?.Value;
+                ArgumentNullException.ThrowIfNull(opts);
 
-                configuration.Host(messageBrokerOptions.HostName, h =>
+                cfg.Host(opts.HostName, h =>
                 {
-                    h.Username(messageBrokerOptions.UserName);
-                    h.Password(messageBrokerOptions.Password);
+                    h.Username(opts.UserName);
+                    h.Password(opts.Password);
                 });
 
-                configuration.UseMessageRetry(retry => retry.Exponential(
+                cfg.UseMessageRetry(retry => retry.Exponential(
                     retryLimit: 5,
                     minInterval: TimeSpan.FromSeconds(1),
                     maxInterval: TimeSpan.FromSeconds(30),
                     intervalDelta: TimeSpan.FromSeconds(3)));
 
-                configuration.UseInMemoryOutbox(context);
+                cfg.PrefetchCount = 32;
+                cfg.ConcurrentMessageLimit = 16;
 
-                configuration.PrefetchCount = 32;
-                configuration.ConcurrentMessageLimit = 16;
-
-                configuration.ConfigureEndpoints(context);
+                cfg.ConfigureEndpoints(context);
             });
         });
 

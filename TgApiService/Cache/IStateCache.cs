@@ -1,4 +1,6 @@
-﻿namespace TgApiService.Cache;
+﻿using SharedTypes;
+
+namespace TgApiService.Cache;
 
 internal enum UserState
 {
@@ -25,4 +27,8 @@ internal interface IStateCache
     // Флаг, что для пользователя уже добавлены системные категории (категории по умолчанию)
     Task<bool> GetDefaultCategoriesSeededAsync(long chatId);
     Task SetDefaultCategoriesSeededAsync(long chatId);
+
+    // Кэширование списка категорий пользователя
+    Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId);
+    Task SetCategoriesAsync(long chatId, IReadOnlyList<CategoryDto> categories);
 }

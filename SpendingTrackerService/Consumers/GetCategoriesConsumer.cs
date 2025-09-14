@@ -68,7 +68,7 @@ internal class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
         catch (DbUpdateException ex)
         {
             // Нормальная гонка, если несколько запросов параллельно инициируют посев
-            _logger.LogDebug(ex, "Race while seeding default categories for user {UserId}", userId);
+            _logger.LogWarning(ex, "Race while seeding default categories for user {UserId}", userId);
         }
         catch (Exception ex)
         {
