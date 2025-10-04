@@ -1,5 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -14,6 +15,8 @@ internal class Program
     public static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+
+        builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
 
         builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.Telegram));
         builder.Services.Configure<MessageBrokerOptions>(builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));

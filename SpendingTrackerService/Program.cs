@@ -1,6 +1,7 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SharedTypes;
 using SpendingTrackerService.Consumers;
 using SpendingTrackerService.Database;
@@ -12,6 +13,8 @@ internal class Program
     public static void Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+
+        builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
 
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
