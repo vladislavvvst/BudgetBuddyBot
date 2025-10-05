@@ -4,11 +4,17 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgApiService.Cache;
-using TgApiService.Handlers;
+using TgApiService.Common;
 using TgApiService.Options;
+using TgApiService.Scenes.Common;
 
 namespace TgApiService.Services;
 
+/// <summary>
+/// Основной класс-обработчик логики update.
+/// Выполняет валидацию (допущенные пользователи, личный чат),
+/// оборачивает данные в UpdateContext и передает их в SceneRouter.
+/// </summary>
 internal class UpdateProcessor
 {
     private readonly ILogger<UpdateProcessor> _logger;
@@ -48,13 +54,14 @@ internal class UpdateProcessor
         {
             long? chatId = TryGetChatId(update);
 
-            if (chatId is long id)
+            if (chatId is { } id)
                 await botClient.SendMessage(id, "Пока не для всех :(", cancellationToken: ct);
+
             return;
         }
 
-        HandlerContext ctx = new(_logger, _stateStorage, _tracker, botClient, update);
-        await BotRouter.RouteAsync(ctx, ct);
+        UpdateContext context = new(_logger, _stateStorage, _tracker, botClient, update);
+        await SceneRouter.RouteAsync(context, ct);
     }
 
     private bool IsAllowedAndPrivate(Update update)

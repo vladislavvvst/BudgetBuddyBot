@@ -3,7 +3,10 @@ using SharedTypes;
 
 namespace TgApiService.Cache;
 
-// КЭШ, хранящий состояния пользователей в памяти приложения
+/// <summary>
+/// In-memory IStateCache.
+/// Держит состояние и данные пользователей в памяти процесса.
+/// </summary>
 internal class StateMemoryCache : IStateCache
 {
     private readonly IMemoryCache _cache;
@@ -53,23 +56,7 @@ internal class StateMemoryCache : IStateCache
         return Task.CompletedTask;
     }
 
-    // Флаг, что для пользователя уже добавлены системные категории (категории по умолчанию)
-    public Task<bool> GetDefaultCategoriesSeededAsync(long chatId)
-    {
-        string cacheKey = BuildDefaultCategoriesKey(chatId);
-        if (_cache.TryGetValue(cacheKey, out bool value))
-            return Task.FromResult(value);
-        return Task.FromResult(false);
-    }
-
-    public Task SetDefaultCategoriesSeededAsync(long chatId)
-    {
-        string cacheKey = BuildDefaultCategoriesKey(chatId);
-        _cache.Set(cacheKey, true);
-        return Task.CompletedTask;
-    }
-
-    // Кэширование списка категорий пользователя
+    // Кэш списка категорий пользователя
     public Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId)
     {
         string key = BuildCategoriesKey(chatId);
@@ -84,7 +71,7 @@ internal class StateMemoryCache : IStateCache
         return Task.CompletedTask;
     }
 
-    // ----- UTILS -----
+    // Вспомогательные методы формирования ключей
     private static string BuildCategoriesKey(long chatId) => $"user_categories:{chatId}";
     private static string BuildUserStateKey(long chatId) => $"user_state:{chatId}";
     private static string BuildTempKey(long chatId) => $"category_id:{chatId}";

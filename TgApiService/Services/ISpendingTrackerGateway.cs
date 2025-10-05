@@ -2,6 +2,9 @@
 
 namespace TgApiService.Services;
 
+/// <summary>
+/// Интерфейс RPC-шлюза - работа с шиной сообщений (MassTransit/IRequestClient).
+/// </summary>
 internal interface ISpendingTrackerGateway
 {
     // Траты

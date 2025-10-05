@@ -1,10 +1,14 @@
-﻿using Telegram.Bot;
+﻿using System.Collections.Immutable;
+using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using TgApiService.Entities;
 
 namespace TgApiService.Services;
 
+/// <summary>
+/// Hosted-сервис, который запускает polling Telegram-бота в фоновом потоке.
+/// Регистрируется в DI как IHostedService, стартует при запуске приложения.
+/// </summary>
 internal class BotHostedService : BackgroundService
 {
     private readonly ITelegramBotClient _botClient;
@@ -33,7 +37,6 @@ internal class BotHostedService : BackgroundService
             try
             {
                 ReceiverOptions receiverOptions = new() { DropPendingUpdates = true, AllowedUpdates = [] };
-                User me = await _botClient.GetMe(stoppingToken);
 
                 await _botClient.ReceiveAsync
                 (
@@ -50,6 +53,20 @@ internal class BotHostedService : BackgroundService
         }
     }
 
+    // Глобальные команды для бота (устанавливаются один раз при старте)
+
+    private readonly record struct CommandInfo(string Command, string Description);
+
+    private static readonly ImmutableArray<CommandInfo> All =
+    [
+        // todo: добавить в const string ...
+        new("start", "Запустить бота"),
+        new("menu", "Открыть меню"),
+        new("about", "О боте")
+    ];
+
     private async Task EnsureCommandsAsync(CancellationToken cancellationToken) =>
-        await _botClient.SetMyCommands(BotCommands.ToTelegram(), cancellationToken: cancellationToken);
+        await _botClient.SetMyCommands(
+            All.Select(c => new BotCommand { Command = c.Command, Description = c.Description }),
+            cancellationToken: cancellationToken);
 }

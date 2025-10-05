@@ -4,14 +4,15 @@ using Telegram.Bot.Types;
 
 namespace TgApiService.Services;
 
+/// <summary>
+/// Адаптер между Telegram-клиентом и приложением.
+/// Реализует IUpdateHandler: на каждый update создает DI-scope и передает управление UpdateProcessor.
+/// </summary>
 internal sealed class UpdateHandler : IUpdateHandler
 {
     private readonly IServiceScopeFactory _scopeFactory;
 
-    public UpdateHandler(IServiceScopeFactory scopeFactory)
-    {
-        _scopeFactory = scopeFactory;
-    }
+    public UpdateHandler(IServiceScopeFactory scopeFactory) => _scopeFactory = scopeFactory;
 
     public async Task HandleUpdateAsync
     (

@@ -2,33 +2,45 @@
 
 namespace TgApiService.Cache;
 
+/// <summary>
+/// Перечисление всех сцен бота.
+/// Определяет, на каком шаге пользователь сейчас находится.
+/// </summary>
 internal enum UserState
 {
-    MainMenu = 0,
-    ExpenseAdd_PickCategory = 1,
-    ExpenseAdd_WaitAmountComment = 2,
+    MainMenu = 0,                       // Главное меню
+    ExpenseAddPickCategory = 1,         // Выбор категории при добавлении траты
+    ExpenseAddWaitAmountComment = 2,    // Ввод суммы и комментария
 
-    CategoryMenu = 10,
-    CategoryAdd_WaitName = 11,
-    CategoryDelete_WaitChoice = 12
+    CategoryMenu = 10,                  // Меню категорий
+    CategoryAddWaitName = 11,           // Ввод имени новой категории
+    CategoryDeleteWaitChoice = 12,      // Выбор категории для удаления
+
+    StatisticsWaitPeriod = 20,          // Выбор периода статистики
+    StatisticsWaitChoice = 21,          // Выбор типа статистики
+    StatisticsWaitRangeInput = 22       // Ввод диапазона дат для статистики
 };
 
+/// <summary>
+/// Тип входящего update от Telegram.
+/// </summary>
+internal enum UpdateKind { Unknown, Message, CallbackQuery, Command }
+
+/// <summary>
+/// Интерфейс хранилища пользовательского состояния и вспомогательных данных.
+/// </summary>
 internal interface IStateCache
 {
-    // Состояния пользователя
+    // Состояния пользователя (в какой сцене находится)
     Task<UserState> GetStateAsync(long chatId);
     Task SetStateAsync(long chatId, UserState state);
 
-    // Категория, выбранная пользователем при добавлении расхода
+    // Временно выбранная категория (пока пользователь добавляет трату)
     Task<string?> GetCategoryIdAsync(long chatId);
     Task SetCategoryIdAsync(long chatId, string value);
     Task RemoveCategoryIdAsync(long chatId);
 
-    // Флаг, что для пользователя уже добавлены системные категории (категории по умолчанию)
-    Task<bool> GetDefaultCategoriesSeededAsync(long chatId);
-    Task SetDefaultCategoriesSeededAsync(long chatId);
-
-    // Кэширование списка категорий пользователя
+    // Кэш списка категорий пользователя, чтобы не ходить за ними в сервис каждый раз
     Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId);
     Task SetCategoriesAsync(long chatId, IReadOnlyList<CategoryDto> categories);
 }

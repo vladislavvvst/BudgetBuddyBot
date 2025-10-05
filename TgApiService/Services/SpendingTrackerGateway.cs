@@ -3,6 +3,10 @@ using SharedTypes;
 
 namespace TgApiService.Services;
 
+/// <summary>
+/// Реализация шлюза через MassTransit-шину.
+/// Для каждого типа запроса создает IRequestClient и ждет ответа.
+/// </summary>
 internal class SpendingTrackerGateway : ISpendingTrackerGateway
 {
     private readonly IClientFactory _clients;

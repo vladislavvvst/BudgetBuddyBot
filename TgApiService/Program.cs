@@ -6,6 +6,7 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using TgApiService.Cache;
 using TgApiService.Options;
+using TgApiService.Scenes.Common;
 using TgApiService.Services;
 
 namespace TgApiService;
@@ -78,6 +79,8 @@ internal class Program
 
         builder.Services.AddSingleton<IUpdateHandler, UpdateHandler>();
         builder.Services.AddHostedService<BotHostedService>();
+
+        SceneRegistry.Bootstrap();
 
         IHost host = builder.Build();
         await host.RunAsync();
