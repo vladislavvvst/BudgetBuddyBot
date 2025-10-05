@@ -51,6 +51,10 @@ internal static class UiStrings
         public const string Add = "➕ Добавить";
         public const string Delete = "🗑️ Удалить";
         public const string Back = "⬅️ Назад";
+
+        public const string BotStart = "Запустить бота";
+        public const string BotMenu = "Открыть меню";
+        public const string BotAbout = "О боте";
     }
 
     // ==============
@@ -60,9 +64,10 @@ internal static class UiStrings
     {
         public const string ChooseAction = "Выберите действие:";
 
-        public const string CategoryAdd = "Введите название новой категории\n(или /cancel для отмены):";
+        public const string CategoryAdd = "Введите название новой категории:";
         public const string ChooseCategory = "Выберите категорию:";
         public const string ChooseCategoryToDelete = "Выберите категорию для удаления:";
+        public const string ChoosePeriod = "Выберите период:";
 
         public const string StartText = "Привет! Я помогу вести расходы :)";
         public const string AboutBot =
@@ -76,7 +81,7 @@ internal static class UiStrings
 
         public const string StartExpensePrompt =
             "Введите сумму и комментарий (опционально), например:\n" +
-            "<b>1500 Озон</b>\nДля отмены напишите: <b>/cancel</b>";
+            "<b>105590 Iphone 16 Pro Max 256 GB</b>";
     }
 
     // ==============
@@ -84,20 +89,26 @@ internal static class UiStrings
     // ==============
     internal static class Errors
     {
-        public const string AccessDeniedOwner = "⛔️ Доступ запрещён! Этот бот только для владельца";
-        public const string AccessDeniedPrivate = "⛔️ Доступ запрещён! Бот работает только в личных сообщениях";
-        public const string Cancelled = "⛔️ Действие отменено";
-        public const string EmptyInput = "Пустой ввод. Попробуйте ещё раз\nДля отмены напишите: /cancel";
-        public const string EmptyNameCategory = "Пустое имя категории. Попробуйте ещё раз\nДля отмены напишите: /cancel";
-        public const string BadFormat = "Формат: <b>Категория Сумма [Комментарий]</b>\nПример: <b>Топливо 1500 Лукойл</b>";
-        public const string BadAmount = "Некорректная сумма. Введите положительное число\nДля отмены напишите: /cancel";
-        public const string UnknownCmd = "Неизвестная команда";
-        public const string ErrorAddingExpense = "Ошибка при добавлении траты. Попробуйте ещё раз";
-        public const string ErrorAddingCategory = "Ошибка при добавлении категории. Попробуйте ещё раз";
-        public const string ErrorDeletingCategory = "Ошибка при удалении категории. Попробуйте ещё раз";
-        public const string ErrorProcessing = "Сервис упал при обработке. Попробуйте позже";
-        public const string ErrorTimeout = "Таймаут запроса. Попробуйте ещё раз";
-        public const string ErrorNameCategory = "Категория #";
+        public const string AccessDeniedOwner      = "🚫 Доступ запрещен! Этот бот только для владельца";
+        public const string AccessDeniedPrivate    = "🔒 Доступ запрещен! Бот работает только в личных сообщениях";
+
+        public const string Cancelled              = "❌ Действие отменено";
+        public const string EmptyInput             = "⚠️ Пустой ввод. Попробуйте еще раз";
+        public const string EmptyNameCategory      = "⚠️ Пустое имя категории. Попробуйте еще раз";
+
+        public const string BadFormat              = "🤔 Некорректный ввод. Попробуйте еще раз\nФормат: <b>Сумма Комментарий (опционально)</b>\n" +
+                                                     "Пример: <b>105590 Iphone 16 Pro Max 256 GB</b>";
+
+        public const string BadAmount              = "🚫 Некорректная сумма. . Попробуйте еще раз\nВведите положительное число";
+        public const string UnknownCmd             = "🤷‍♂️ Неизвестная команда";
+
+        public const string ErrorAddingExpense     = "💥 Ошибка при добавлении траты. Попробуйте еще раз";
+        public const string ErrorAddingCategory    = "💥 Ошибка при добавлении категории. Попробуйте еще раз";
+        public const string ErrorDeletingCategory  = "💥 Ошибка при удалении категории. Попробуйте еще раз";
+        public const string ErrorProcessing        = "🔥 Сервис упал при обработке. Попробуйте позже";
+        public const string ErrorTimeout           = "⏳ Таймаут запроса. Попробуйте еще раз";
+
+        public const string ErrorNameCategory      = "❓ Категория #";
     }
 
     // ==============
@@ -105,32 +116,37 @@ internal static class UiStrings
     // ==============
     internal static class Info
     {
-        public const string NoExpenses = "Пока нет трат";
-        public const string LastExpensesHeader = "Последние траты:";
-        public const string NoCategories = "Нет категорий для удаления";
-        public const string CategoryNotFoundForAddExp = "Категории не найдены. Сначала добавьте категорию";
-        public const string PushButton = "Сейчас нужно нажать кнопку на экране ⬇️";
-        public const string CategoryDeleted = "Категория удалена";
+        public const string NoExpenses                  = "🪙 Пока нет трат";
+        public const string LastExpensesHeader          = "📝 <b>Последние 10 трат:</b>";
+        public const string NoCategories                = "📭 Нет категорий для удаления";
+        public const string CategoryNotFoundForAddExp   = "⚠️ Категории не найдены. Сначала добавьте категорию ➕";
+        public const string PushButton                  = "👇 Сейчас нужно нажать кнопку на экране";
     }
 
     // ==============
     // Форматированные генераторы текстов
     // ==============
     public static string CategoriesList(IEnumerable<string> names) =>
-        $"Список категорий:\n<b>{HtmlLines(names)}</b>";
+        $"📂 <b>Список категорий:</b>\n{HtmlLines(names)}";
 
     public static string CategoryAdded(string name) =>
-        $"Категория <b>{HtmlText(name)}</b> добавлена";
+        $"✅ Категория <b>{HtmlText(name)}</b> успешно добавлена!";
+
+    public static string CategoryDeleted(string name) =>
+        $"🗑️ Категория <b>{HtmlText(name)}</b> успешно удалена!";
 
     public static string ExpenseAdded(decimal amount, string category, string? comment) =>
-        $"Трата <b>{amount.ToString("0.##", CultureInfo.InvariantCulture)}₽</b> " +
-        $"добавлена в категорию <b>{HtmlText(category)}</b>" +
-        (string.IsNullOrWhiteSpace(comment) ? string.Empty : $"\nКомментарий: {HtmlText(comment!)}");
+        $"💰 Трата <b>{amount.ToString("0.##", CultureInfo.InvariantCulture)}₽</b> " +
+        $"добавлена в категорию <b>{HtmlText(category)}</b> " +
+        (string.IsNullOrWhiteSpace(comment)
+            ? string.Empty
+            : $"\n📝 Комментарий: {HtmlText(comment!)}");
 
     public static string ExpenseLine(DateTimeOffset addDate, string category, decimal amount, string? comment) =>
-        $"{addDate:yyyy-MM-dd} — {HtmlText(category)}: " +
-        $"{amount.ToString("0.##", CultureInfo.InvariantCulture)}" +
-        (string.IsNullOrWhiteSpace(comment) ? string.Empty : $" ({HtmlText(comment!)})");
+        $"📅 {addDate:dd.MM.yyyy}\n🗂️{HtmlText(category)}\n💰 <b>{amount.ToString("N2", CultureInfo.InvariantCulture)}₽</b>" +
+        (string.IsNullOrWhiteSpace(comment)
+            ? string.Empty
+            : $"\n📝 {HtmlText(comment!)}");
 
     // ==============
     // HTML helpers для Telegram

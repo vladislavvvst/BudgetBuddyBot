@@ -1,6 +1,7 @@
 ﻿using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.UI;
@@ -16,10 +17,10 @@ internal static class SceneRouter
     private static readonly Dictionary<string, Func<UpdateContext, CancellationToken, Task>?> TopMenu =
         new(StringComparer.Ordinal)
         {
-            [UiStrings.CallbackData.AddExpense] = static (ctx, ct) => SceneRegistry.Resolve(UserState.ExpenseAddPickCategory).EnterAsync(ctx, ct),
-            [UiStrings.CallbackData.Categories] = static (ctx, ct) => SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(ctx, ct),
-            [UiStrings.CallbackData.Stats] = static (ctx, ct) => SceneRegistry.Resolve(UserState.StatisticsWaitPeriod).EnterAsync(ctx, ct),
-            [UiStrings.CallbackData.LastExpenses] = static (ctx, ct) => ShowExpensesListAsync(ctx, ct)
+            [UiStrings.CallbackData.AddExpense] = static (ctx, ct)      => SceneRegistry.Resolve(UserState.ExpenseAddPickCategory).EnterAsync(ctx, ct),
+            [UiStrings.CallbackData.Categories] = static (ctx, ct)      => SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(ctx, ct),
+            [UiStrings.CallbackData.Stats] = static (ctx, ct)           => SceneRegistry.Resolve(UserState.StatisticsWaitPeriod).EnterAsync(ctx, ct),
+            [UiStrings.CallbackData.LastExpenses] = static (ctx, ct)    => ShowExpensesListAsync(ctx, ct)
         };
 
     private static readonly Dictionary<string, Func<UpdateContext, CancellationToken, Task>?> Commands =
@@ -116,18 +117,7 @@ internal static class SceneRouter
     private static async Task ShowAboutAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.AboutBot,
-            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-            cancellationToken: ct);
-
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseAction,
-            replyMarkup: UiKeyboards.BuildMainMenuInline,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.AboutBot, parseMode: ParseMode.Html, cancellationToken: ct);
     }
 
     private static async Task GlobalCancelAsync(UpdateContext context, CancellationToken ct)
@@ -163,7 +153,7 @@ internal static class SceneRouter
             return UiStrings.ExpenseLine(i.AddedAtUtc, categoryName, i.Amount, i.Comment);
         });
 
-        string text = $"{UiStrings.Info.LastExpensesHeader}\n{string.Join("\n", lines)}";
-        await context.Bot.SendMessage(chatId, text, cancellationToken: ct);
+        string text = $"{UiStrings.Info.LastExpensesHeader}\n\n{string.Join("\n\n", lines)}";
+        await context.Bot.SendMessage(chatId, text, parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
     }
 }

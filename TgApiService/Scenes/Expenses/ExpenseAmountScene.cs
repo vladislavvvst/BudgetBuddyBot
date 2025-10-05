@@ -1,9 +1,9 @@
 ﻿using MassTransit;
 using SharedTypes;
 using System.Globalization;
-using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.Scenes.Common;
@@ -14,7 +14,6 @@ namespace TgApiService.Scenes.Expenses;
 /// <summary>
 /// Сцена ввода суммы и комментария для новой траты.
 /// Попадаем сюда после выбора категории.
-/// Ждем текст вида "1500 кофе" или "кофе 1500".
 /// Проверяем ввод, шлем RPC AddExpenseAsync.
 /// </summary>
 internal sealed class ExpenseAmountScene : IScene
@@ -28,11 +27,8 @@ internal sealed class ExpenseAmountScene : IScene
         BackStackService.Push(chatId, UserState.ExpenseAddPickCategory);
         await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAddWaitAmountComment);
 
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.StartExpensePrompt,
-            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.StartExpensePrompt, parseMode: ParseMode.Html,
+            replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
     }
 
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
@@ -57,7 +53,8 @@ internal sealed class ExpenseAmountScene : IScene
 
         if (!TryParseAmountAndComment(text, out decimal amount, out string? comment))
         {
-            await context.Bot.SendMessage(chatId, UiStrings.Errors.BadFormat, cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, UiStrings.Errors.BadFormat, parseMode: ParseMode.Html,
+                replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
             return;
         }
 
@@ -72,26 +69,20 @@ internal sealed class ExpenseAmountScene : IScene
         try
         {
             string requestId = $"{chatId}:{msg.MessageId}";
-            AddExpenseRequest request = new(
-                chatId,
-                categoryId,
-                amount,
-                comment,
-                requestId);
 
+            AddExpenseRequest request = new(chatId, categoryId, amount, comment, requestId);
             AddExpenseResponse response = await context.Tracker.AddExpenseAsync(request, ct);
 
             if (response.Success)
             {
-                await context.Bot.SendMessage(
-                    chatId,
-                    UiStrings.ExpenseAdded(amount, categoryName, comment),
-                    parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-                    cancellationToken: ct);
+                await context.Bot.SendMessage(chatId, UiStrings.ExpenseAdded(amount, categoryName, comment),
+                    parseMode: ParseMode.Html, cancellationToken: ct);
 
                 await context.StateCache.RemoveCategoryIdAsync(chatId);
+
                 BackStackService.Pop(chatId);
                 await SceneRegistry.Resolve(UserState.MainMenu).EnterAsync(context, ct);
+
                 return;
             }
 
@@ -137,9 +128,9 @@ internal sealed class ExpenseAmountScene : IScene
     }
 
     /// <summary>
-    /// Пытается извлечь сумму и комментарий из произвольного текста.
-    /// Поддерживает как «1500 кофе», так и «кофе 1500». Разделители: пробелы, запятая/точка для дробной части.
-    /// Берем ПЕРВОЕ найденное число как сумму (0.01..).
+    /// Парсит строку в формате: "сумма комментарий".
+    /// Сумма обязательно идёт первой, далее произвольный комментарий.
+    /// Разрешены разделители дробной части "." или ",".
     /// </summary>
     private static bool TryParseAmountAndComment(string input, out decimal amount, out string? comment)
     {
@@ -149,26 +140,38 @@ internal sealed class ExpenseAmountScene : IScene
         if (string.IsNullOrWhiteSpace(input))
             return false;
 
-        Match m = Regex.Match(input, @"(?<!\d)(\d+(?:[.,]\d{1,2})?)(?!\d)");
-        if (!m.Success)
-            return false;
+        // Обрезаем ведущие/хвостовые пробелы
+        input = input.Trim();
 
-        string numberRaw = m.Groups[1].Value.Replace(',', '.');
-        if (!decimal.TryParse(numberRaw, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
+        // Разделяем только по первому пробелу, чтобы не терять остальные слова комментария
+        int spaceIndex = input.IndexOf(' ');
+        string numberPart;
+        string commentPart = string.Empty;
+
+        if (spaceIndex == -1)
+        {
+            // Введена только сумма, комментария нет
+            numberPart = input;
+        }
+        else
+        {
+            numberPart = input[..spaceIndex];
+            commentPart = input[(spaceIndex + 1)..].Trim();
+        }
+
+        // Нормализуем десятичный разделитель
+        numberPart = numberPart.Replace(',', '.');
+
+        if (!decimal.TryParse(numberPart, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
             return false;
 
         amount = parsed;
-
-        string before = input[..m.Index].Trim();
-        string after = input[(m.Index + m.Length)..].Trim();
-        string combined = string.Join(" ", new[] { before, after }.Where(s => !string.IsNullOrWhiteSpace(s)));
-        comment = string.IsNullOrWhiteSpace(combined) ? null : combined;
-
+        comment = string.IsNullOrWhiteSpace(commentPart) ? null : commentPart;
         return true;
     }
 
     /// <summary>
-    /// Достает имя категории по Id из кеша пользователя; если не нашли — возвращает "#id".
+    /// Достает имя категории по Id из кеша пользователя. Если не нашли — возвращает "#id".
     /// </summary>
     private static async Task<string> ResolveCategoryNameAsync(UpdateContext context, long categoryId, CancellationToken ct)
     {

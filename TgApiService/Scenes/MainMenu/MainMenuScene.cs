@@ -21,14 +21,8 @@ internal sealed class MainMenuScene : IScene
         BackStackService.Clear(chatId);
         await context.StateCache.SetStateAsync(chatId, UserState.MainMenu);
 
-        await context.Bot.SendMessage(chatId, UiStrings.Prompts.StartText,
-            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, cancellationToken: ct);
-
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseAction,
-            replyMarkup: UiKeyboards.BuildMainMenuInline,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction,
+            replyMarkup: UiKeyboards.BuildMainMenuInline, cancellationToken: ct);
     }
 
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
@@ -38,11 +32,8 @@ internal sealed class MainMenuScene : IScene
 
         if (string.Equals(text, UiStrings.Commands.About, StringComparison.Ordinal))
         {
-            await context.Bot.SendMessage(
-                chatId,
-                UiStrings.Prompts.AboutBot,
-                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-                cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, UiStrings.Prompts.AboutBot,
+                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, cancellationToken: ct);
             return;
         }
 
@@ -53,11 +44,8 @@ internal sealed class MainMenuScene : IScene
             return;
         }
 
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseAction,
-            replyMarkup: UiKeyboards.BuildMainMenuInline,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction,
+            replyMarkup: UiKeyboards.BuildMainMenuInline, cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)

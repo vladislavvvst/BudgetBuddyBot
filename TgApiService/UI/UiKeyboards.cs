@@ -8,6 +8,11 @@ namespace TgApiService.UI;
 /// </summary>
 internal static class UiKeyboards
 {
+    public static InlineKeyboardMarkup BackOnlyKb { get; } = new
+    ([
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Back, UiStrings.CallbackData.NavBack)]
+    ]);
+
     public static InlineKeyboardMarkup CategoryMenuKb { get; } = new
     ([
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Add, UiStrings.CallbackData.CatAdd)],

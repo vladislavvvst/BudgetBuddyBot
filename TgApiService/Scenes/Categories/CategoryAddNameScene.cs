@@ -2,6 +2,7 @@
 using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.Scenes.Common;
@@ -21,15 +22,11 @@ internal sealed class CategoryAddNameScene : IScene
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
         BackStackService.Push(chatId, UserState.CategoryMenu);
-        await context.StateCache.SetStateAsync(chatId, UserState.CategoryAddWaitName);
 
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.CategoryAdd,
-            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-            cancellationToken: ct);
+        await context.StateCache.SetStateAsync(chatId, UserState.CategoryAddWaitName);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.CategoryAdd, parseMode: ParseMode.Html,
+            replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
     }
 
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
@@ -58,7 +55,11 @@ internal sealed class CategoryAddNameScene : IScene
         if (duplicate)
         {
             string msgDup = $"Категория {UiStrings.Bold(name)} уже существует";
-            await context.Bot.SendMessage(chatId, msgDup, parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, msgDup, parseMode: ParseMode.Html, cancellationToken: ct);
+
+            await context.Bot.SendMessage(chatId, UiStrings.Prompts.CategoryAdd, parseMode: ParseMode.Html,
+                replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
+
             return;
         }
 
@@ -71,12 +72,7 @@ internal sealed class CategoryAddNameScene : IScene
             if (response.Success)
             {
                 await context.StateCache.SetCategoriesAsync(chatId, []);
-
-                await context.Bot.SendMessage(
-                    chatId,
-                    UiStrings.CategoryAdded(name),
-                    parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-                    cancellationToken: ct);
+                await context.Bot.SendMessage(chatId, UiStrings.CategoryAdded(name), parseMode: ParseMode.Html, cancellationToken: ct);
 
                 BackStackService.Pop(chatId);
                 await SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(context, ct);

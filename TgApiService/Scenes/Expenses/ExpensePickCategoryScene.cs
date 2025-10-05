@@ -30,21 +30,14 @@ internal sealed class ExpensePickCategoryScene : IScene
 
         if (categories.Count == 0)
         {
-            await context.Bot.SendMessage(
-                chatId,
-                UiStrings.Info.CategoryNotFoundForAddExp,
-                replyMarkup: UiKeyboards.CategoryMenuKb,
-                cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, UiStrings.Info.CategoryNotFoundForAddExp,
+                replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
 
             return;
         }
 
-        InlineKeyboardMarkup kb = UiKeyboards.BuildCategoriesPickKb(categories);
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseCategory,
-            replyMarkup: kb,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseCategory,
+            replyMarkup: UiKeyboards.BuildCategoriesPickKb(categories), cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
@@ -74,10 +67,7 @@ internal sealed class ExpensePickCategoryScene : IScene
             return;
         }
 
-        await context.StateCache.SetCategoryIdAsync(
-            chatId,
-            categoryId.ToString(CultureInfo.InvariantCulture));
-
+        await context.StateCache.SetCategoryIdAsync(chatId, categoryId.ToString(CultureInfo.InvariantCulture));
         await SceneRegistry.Resolve(UserState.ExpenseAddWaitAmountComment).EnterAsync(context, ct);
     }
 
@@ -92,10 +82,7 @@ internal sealed class ExpensePickCategoryScene : IScene
             return;
         }
 
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Info.PushButton,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)

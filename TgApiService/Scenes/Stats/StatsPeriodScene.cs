@@ -23,11 +23,8 @@ internal sealed class StatsPeriodScene : IScene
         BackStackService.Push(chatId, UserState.MainMenu);
         await context.StateCache.SetStateAsync(chatId, UserState.StatisticsWaitPeriod);
 
-        await context.Bot.SendMessage(
-            chatId,
-            "Выберите период для статистики:", // todo: в const string
-            replyMarkup: UiKeyboards.BuildStatsMenuInline,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChoosePeriod,
+            replyMarkup: UiKeyboards.BuildStatsMenuInline, cancellationToken: ct);
     }
 
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
@@ -41,10 +38,7 @@ internal sealed class StatsPeriodScene : IScene
             return;
         }
 
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Info.PushButton,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)

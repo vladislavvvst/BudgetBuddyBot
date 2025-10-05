@@ -2,6 +2,7 @@
 using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Cache;
 using TgApiService.Common;
@@ -34,12 +35,8 @@ internal sealed class CategoryDeleteScene : IScene
             return;
         }
 
-        InlineKeyboardMarkup kb = UiKeyboards.BuildCategoriesDeleteKb(categories);
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseCategoryToDelete,
-            replyMarkup: kb,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseCategoryToDelete,
+            replyMarkup: UiKeyboards.BuildCategoriesDeleteKb(categories), cancellationToken: ct);
     }
 
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
@@ -84,6 +81,10 @@ internal sealed class CategoryDeleteScene : IScene
             return;
         }
 
+        // Перед удалением вытаскиваем из кэша имя категории по categoryId
+        IReadOnlyList<CategoryDto> categories = await context.StateCache.GetCategoriesAsync(chatId);
+        string categoryName = categories.FirstOrDefault(c => c.Id == categoryId)?.Name ?? $"#{categoryId}";
+
         try
         {
             string requestId = $"{chatId}:{cq.Id}";
@@ -92,8 +93,8 @@ internal sealed class CategoryDeleteScene : IScene
 
             if (response.Success)
             {
-                await context.Bot.SendMessage(chatId, UiStrings.Info.CategoryDeleted, cancellationToken: ct);
                 await context.StateCache.SetCategoriesAsync(chatId, []);
+                await context.Bot.SendMessage(chatId, UiStrings.CategoryDeleted(categoryName), parseMode: ParseMode.Html, cancellationToken: ct);
             }
             else
             {

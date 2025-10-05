@@ -1,6 +1,7 @@
 ﻿using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.Scenes.Common;
@@ -26,28 +27,19 @@ internal sealed class CategoryMenuScene : IScene
         IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
         if (categories.Count == 0)
         {
-            await context.Bot.SendMessage(chatId, UiStrings.Info.NoCategories, cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, UiStrings.Info.NoCategories, parseMode: ParseMode.Html,
+                replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
         }
         else
         {
             IEnumerable<string> lines = categories
                 .OrderBy(c => c.IsSystem ? 1 : 0)
                 .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(c => c.IsSystem ? $"🔒 {UiStrings.HtmlText(c.Name)}" : UiStrings.HtmlText(c.Name));
+                .Select(c => c.IsSystem ? $"⚙️ {UiStrings.HtmlText(c.Name)}" : $"👤 {UiStrings.HtmlText(c.Name)}");
 
-            string msg = UiStrings.CategoriesList(lines);
-            await context.Bot.SendMessage(
-                chatId,
-                msg,
-                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-                cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, UiStrings.CategoriesList(lines), parseMode: ParseMode.Html,
+                replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
         }
-
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseAction,
-            replyMarkup: UiKeyboards.CategoryMenuKb,
-            cancellationToken: ct);
     }
 
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
@@ -61,11 +53,7 @@ internal sealed class CategoryMenuScene : IScene
             return;
         }
 
-        await context.Bot.SendMessage(
-            chatId,
-            UiStrings.Prompts.ChooseAction,
-            replyMarkup: UiKeyboards.CategoryMenuKb,
-            cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction, replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)

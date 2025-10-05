@@ -2,6 +2,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using TgApiService.UI;
 
 namespace TgApiService.Services;
 
@@ -59,10 +60,9 @@ internal class BotHostedService : BackgroundService
 
     private static readonly ImmutableArray<CommandInfo> All =
     [
-        // todo: добавить в const string ...
-        new("start", "Запустить бота"),
-        new("menu", "Открыть меню"),
-        new("about", "О боте")
+        new(UiStrings.Commands.Start, UiStrings.Buttons.BotStart),
+        new(UiStrings.Commands.Menu, UiStrings.Buttons.BotMenu),
+        new(UiStrings.Commands.About, UiStrings.Buttons.BotAbout)
     ];
 
     private async Task EnsureCommandsAsync(CancellationToken cancellationToken) =>
