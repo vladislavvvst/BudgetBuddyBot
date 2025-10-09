@@ -93,20 +93,22 @@ internal static class UiStrings
         public const string AccessDeniedPrivate    = "🔒 Доступ запрещен! Бот работает только в личных сообщениях";
 
         public const string Cancelled              = "❌ Действие отменено";
-        public const string EmptyInput             = "⚠️ Пустой ввод. Попробуйте еще раз";
-        public const string EmptyNameCategory      = "⚠️ Пустое имя категории. Попробуйте еще раз";
+        public const string EmptyInput             = "⚠️ Пустой ввод";
+        public const string EmptyNameCategory      = "⚠️ Пустое имя категории";
+        public const string TextExpected           = "⚠️ Ожидается текстовое сообщение";
+        public const string StringTooLong          = "⚠️ Строка не должна превышать 64 символа";
 
-        public const string BadFormat              = "🤔 Некорректный ввод. Попробуйте еще раз\nФормат: <b>Сумма Комментарий (опционально)</b>\n" +
+        public const string BadFormat              = "🤔 Некорректный ввод\nФормат: <b>Сумма Комментарий (опционально)</b>\n" +
                                                      "Пример: <b>105590 Iphone 16 Pro Max 256 GB</b>";
 
-        public const string BadAmount              = "🚫 Некорректная сумма. . Попробуйте еще раз\nВведите положительное число";
+        public const string BadAmount              = "🚫 Некорректная сумма\nВведите положительное число";
         public const string UnknownCmd             = "🤷‍♂️ Неизвестная команда";
 
-        public const string ErrorAddingExpense     = "💥 Ошибка при добавлении траты. Попробуйте еще раз";
-        public const string ErrorAddingCategory    = "💥 Ошибка при добавлении категории. Попробуйте еще раз";
-        public const string ErrorDeletingCategory  = "💥 Ошибка при удалении категории. Попробуйте еще раз";
+        public const string ErrorAddingExpense     = "💥 Ошибка при добавлении траты";
+        public const string ErrorAddingCategory    = "💥 Ошибка при добавлении категории";
+        public const string ErrorDeletingCategory  = "💥 Ошибка при удалении категории";
         public const string ErrorProcessing        = "🔥 Сервис упал при обработке. Попробуйте позже";
-        public const string ErrorTimeout           = "⏳ Таймаут запроса. Попробуйте еще раз";
+        public const string ErrorTimeout           = "⏳ Таймаут запроса";
 
         public const string ErrorNameCategory      = "❓ Категория #";
     }
@@ -120,7 +122,7 @@ internal static class UiStrings
         public const string LastExpensesHeader          = "📝 <b>Последние 10 трат:</b>";
         public const string NoCategories                = "📭 Нет категорий для удаления";
         public const string CategoryNotFoundForAddExp   = "⚠️ Категории не найдены. Сначала добавьте категорию ➕";
-        public const string PushButton                  = "👇 Сейчас нужно нажать кнопку на экране";
+        public const string PushButton                  = "⚠️ Ожидается нажатие кнопки";
     }
 
     // ==============

@@ -17,6 +17,7 @@ namespace TgApiService.Scenes.Categories;
 /// </summary>
 internal sealed class CategoryAddNameScene : IScene
 {
+    private const int MaxCategoryNameLength = 64;
     public UserState State => UserState.CategoryAddWaitName;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
@@ -33,15 +34,20 @@ internal sealed class CategoryAddNameScene : IScene
     {
         long chatId = Utils.ChatId(context);
         Message msg = context.Update.Message!;
-        string input = msg.Text ?? string.Empty;
 
-        if (string.Equals(input, UiStrings.Commands.Cancel, StringComparison.Ordinal))
+        if (msg.Type is not MessageType.Text)
         {
-            await OnBackAsync(context, ct);
+            await context.Bot.SendMessage(chatId, UiStrings.Errors.TextExpected, cancellationToken: ct);
             return;
         }
 
-        string name = NormalizeName(input);
+        if (msg.Text is { Length: > MaxCategoryNameLength })
+        {
+            await context.Bot.SendMessage(chatId, UiStrings.Errors.StringTooLong, cancellationToken: ct);
+            return;
+        }
+
+        string name = NormalizeName(msg.Text ?? string.Empty);
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -56,10 +62,6 @@ internal sealed class CategoryAddNameScene : IScene
         {
             string msgDup = $"Категория {UiStrings.Bold(name)} уже существует";
             await context.Bot.SendMessage(chatId, msgDup, parseMode: ParseMode.Html, cancellationToken: ct);
-
-            await context.Bot.SendMessage(chatId, UiStrings.Prompts.CategoryAdd, parseMode: ParseMode.Html,
-                replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
-
             return;
         }
 
@@ -95,20 +97,18 @@ internal sealed class CategoryAddNameScene : IScene
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
     {
-        CallbackQuery? cq = context.Update.CallbackQuery;
-        if (cq == null)
-            return;
-
+        CallbackQuery cq = context.Update.CallbackQuery!;
+        long chatId = cq.Message!.Chat.Id;
         string data = cq.Data ?? string.Empty;
+
+        await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
+
         if (string.Equals(data, UiStrings.CallbackData.NavBack, StringComparison.Ordinal))
         {
-            await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
             await OnBackAsync(context, ct);
             return;
         }
 
-        long chatId = cq.Message!.Chat.Id;
-        await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 

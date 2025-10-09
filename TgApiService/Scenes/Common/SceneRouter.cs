@@ -136,7 +136,7 @@ internal static class SceneRouter
         long chatId = Utils.ChatId(context);
         GetExpensesResponse response = await context.Tracker.GetExpensesAsync(new(chatId, 1, 10), ct);
 
-        if (response.Items.Count == 0)
+        if (response.Items.Count is 0)
         {
             await context.Bot.SendMessage(chatId, UiStrings.Info.NoExpenses, cancellationToken: ct);
             return;

@@ -3,7 +3,6 @@ using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.Scenes.Common;
@@ -29,7 +28,7 @@ internal sealed class CategoryDeleteScene : IScene
 
         List<CategoryDto> categories = (await Utils.GetUserCategories(context, ct)).Where(c => !c.IsSystem).ToList();
 
-        if (categories.Count == 0)
+        if (categories.Count is 0)
         {
             await context.Bot.SendMessage(chatId, UiStrings.Info.NoCategories, cancellationToken: ct);
             return;
@@ -42,14 +41,6 @@ internal sealed class CategoryDeleteScene : IScene
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-        string text = context.Update.Message?.Text ?? string.Empty;
-
-        if (string.Equals(text, UiStrings.Commands.Cancel, StringComparison.Ordinal))
-        {
-            await OnBackAsync(context, ct);
-            return;
-        }
-
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 

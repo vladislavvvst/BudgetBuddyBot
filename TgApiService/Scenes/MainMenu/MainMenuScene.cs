@@ -1,4 +1,5 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Types;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.Scenes.Common;
@@ -19,8 +20,8 @@ internal sealed class MainMenuScene : IScene
         long chatId = Utils.ChatId(context);
 
         BackStackService.Clear(chatId);
-        await context.StateCache.SetStateAsync(chatId, UserState.MainMenu);
 
+        await context.StateCache.SetStateAsync(chatId, UserState.MainMenu);
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction,
             replyMarkup: UiKeyboards.BuildMainMenuInline, cancellationToken: ct);
     }
@@ -50,7 +51,9 @@ internal sealed class MainMenuScene : IScene
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
     {
-        string data = context.Update.CallbackQuery?.Data ?? string.Empty;
+        CallbackQuery cq = context.Update.CallbackQuery!;
+        long chatId = cq.Message!.Chat.Id;
+        string data = cq.Data ?? string.Empty;
 
         if (string.Equals(data, UiStrings.CallbackData.NavBack, StringComparison.Ordinal))
         {
@@ -58,7 +61,6 @@ internal sealed class MainMenuScene : IScene
             return;
         }
 
-        long chatId = Utils.ChatId(context);
         await context.Bot.SendMessage(chatId, UiStrings.Errors.UnknownCmd, cancellationToken: ct);
     }
 

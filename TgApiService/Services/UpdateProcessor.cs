@@ -50,15 +50,15 @@ internal class UpdateProcessor
     {
         ct.ThrowIfCancellationRequested();
 
-        if (!IsAllowedAndPrivate(update))
-        {
-            long? chatId = TryGetChatId(update);
-
-            if (chatId is { } id)
-                await botClient.SendMessage(id, "Пока не для всех :(", cancellationToken: ct);
-
-            return;
-        }
+        // if (!IsAllowedAndPrivate(update))
+        // {
+        //     long? chatId = TryGetChatId(update);
+        //
+        //     if (chatId is { } id)
+        //         await botClient.SendMessage(id, "Пока не для всех :(", cancellationToken: ct);
+        //
+        //     return;
+        // }
 
         UpdateContext context = new(_logger, _stateStorage, _tracker, botClient, update);
         await SceneRouter.RouteAsync(context, ct);

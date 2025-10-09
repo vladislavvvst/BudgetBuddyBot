@@ -18,6 +18,7 @@ namespace TgApiService.Scenes.Expenses;
 /// </summary>
 internal sealed class ExpenseAmountScene : IScene
 {
+    private const int MaxExpenseAmountNameLength = 64;
     public UserState State => UserState.ExpenseAddWaitAmountComment;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
@@ -25,8 +26,8 @@ internal sealed class ExpenseAmountScene : IScene
         long chatId = Utils.ChatId(context);
 
         BackStackService.Push(chatId, UserState.ExpenseAddPickCategory);
-        await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAddWaitAmountComment);
 
+        await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAddWaitAmountComment);
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.StartExpensePrompt, parseMode: ParseMode.Html,
             replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
     }
@@ -35,15 +36,23 @@ internal sealed class ExpenseAmountScene : IScene
     {
         long chatId = Utils.ChatId(context);
         Message msg = context.Update.Message!;
-        string text = msg.Text ?? string.Empty;
 
-        if (string.Equals(text, UiStrings.Commands.Cancel, StringComparison.Ordinal))
+        if (msg.Type is not MessageType.Text)
         {
-            await OnBackAsync(context, ct);
+            await context.Bot.SendMessage(chatId, $"{UiStrings.Errors.TextExpected}\n{UiStrings.Prompts.StartExpensePrompt}",
+                parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
+            return;
+        }
+
+        if (msg.Text is { Length: > MaxExpenseAmountNameLength })
+        {
+            await context.Bot.SendMessage(chatId, $"{UiStrings.Errors.StringTooLong}\n{UiStrings.Prompts.StartExpensePrompt}",
+                parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
             return;
         }
 
         string? categoryIdStr = await context.StateCache.GetCategoryIdAsync(chatId);
+
         if (string.IsNullOrEmpty(categoryIdStr) ||
             !long.TryParse(categoryIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out long categoryId))
         {
@@ -51,7 +60,7 @@ internal sealed class ExpenseAmountScene : IScene
             return;
         }
 
-        if (!TryParseAmountAndComment(text, out decimal amount, out string? comment))
+        if (!TryParseAmountAndComment(msg.Text ?? string.Empty, out decimal amount, out string? comment))
         {
             await context.Bot.SendMessage(chatId, UiStrings.Errors.BadFormat, parseMode: ParseMode.Html,
                 replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
@@ -102,20 +111,18 @@ internal sealed class ExpenseAmountScene : IScene
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
     {
-        CallbackQuery? cq = context.Update.CallbackQuery;
-        if (cq == null)
-            return;
-
+        CallbackQuery cq = context.Update.CallbackQuery!;
+        long chatId = cq.Message!.Chat.Id;
         string data = cq.Data ?? string.Empty;
+
+        await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
+
         if (string.Equals(data, UiStrings.CallbackData.NavBack, StringComparison.Ordinal))
         {
-            await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
             await OnBackAsync(context, ct);
             return;
         }
 
-        long chatId = cq.Message!.Chat.Id;
-        await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 

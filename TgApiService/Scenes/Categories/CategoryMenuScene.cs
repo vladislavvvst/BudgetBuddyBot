@@ -25,7 +25,7 @@ internal sealed class CategoryMenuScene : IScene
         await context.StateCache.SetStateAsync(chatId, UserState.CategoryMenu);
 
         IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
-        if (categories.Count == 0)
+        if (categories.Count is 0)
         {
             await context.Bot.SendMessage(chatId, UiStrings.Info.NoCategories, parseMode: ParseMode.Html,
                 replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
@@ -45,15 +45,7 @@ internal sealed class CategoryMenuScene : IScene
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-        string text = context.Update.Message?.Text ?? string.Empty;
-
-        if (string.Equals(text, UiStrings.Commands.Cancel, StringComparison.Ordinal))
-        {
-            await OnBackAsync(context, ct);
-            return;
-        }
-
-        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction, replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)

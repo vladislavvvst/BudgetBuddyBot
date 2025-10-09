@@ -2,7 +2,6 @@
 using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 using TgApiService.Cache;
 using TgApiService.Common;
 using TgApiService.Scenes.Common;
@@ -28,16 +27,21 @@ internal sealed class ExpensePickCategoryScene : IScene
 
         IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
 
-        if (categories.Count == 0)
+        if (categories.Count is 0)
         {
             await context.Bot.SendMessage(chatId, UiStrings.Info.CategoryNotFoundForAddExp,
                 replyMarkup: UiKeyboards.CategoryMenuKb, cancellationToken: ct);
-
             return;
         }
 
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseCategory,
             replyMarkup: UiKeyboards.BuildCategoriesPickKb(categories), cancellationToken: ct);
+    }
+
+    public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
+    {
+        long chatId = Utils.ChatId(context);
+        await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
@@ -69,20 +73,6 @@ internal sealed class ExpensePickCategoryScene : IScene
 
         await context.StateCache.SetCategoryIdAsync(chatId, categoryId.ToString(CultureInfo.InvariantCulture));
         await SceneRegistry.Resolve(UserState.ExpenseAddWaitAmountComment).EnterAsync(context, ct);
-    }
-
-    public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
-    {
-        long chatId = Utils.ChatId(context);
-        string text = context.Update.Message?.Text ?? string.Empty;
-
-        if (string.Equals(text, UiStrings.Commands.Cancel, StringComparison.Ordinal))
-        {
-            await OnBackAsync(context, ct);
-            return;
-        }
-
-        await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
