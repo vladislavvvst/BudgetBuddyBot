@@ -22,7 +22,7 @@ internal class Program
         });
 
         builder.Services.Configure<MessageBrokerOptions>(
-            builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
+            builder.Configuration.GetSection(MessageBrokerOptions.SectionName));
 
         builder.Services.AddMassTransit(busCfg =>
         {

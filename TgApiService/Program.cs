@@ -4,10 +4,13 @@ using Serilog;
 using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
-using TgApiService.Cache;
-using TgApiService.Options;
-using TgApiService.Scenes.Common;
-using TgApiService.Services;
+using TgApiService.Application.Abstractions;
+using TgApiService.Application.Cache;
+using TgApiService.Configuration.Options;
+using TgApiService.Infrastructure.Gateways;
+using TgApiService.Presentation.Telegram.Common;
+using TgApiService.Presentation.Telegram.Consumers;
+using TgApiService.Presentation.Telegram.Services;
 
 namespace TgApiService;
 
@@ -19,55 +22,59 @@ internal class Program
 
         builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
 
-        builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.Telegram));
-        builder.Services.Configure<MessageBrokerOptions>(builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker));
+        builder.Services.AddOptions<TelegramOptions>()
+            .Bind(builder.Configuration.GetRequiredSection(TelegramOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-        builder.Services.AddHttpClient("tg_bot_client").RemoveAllLoggers()
+        builder.Services.AddOptions<MessageBrokerOptions>()
+            .Bind(builder.Configuration.GetRequiredSection(MessageBrokerOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddHttpClient("tg_bot_client")
+            .RemoveAllLoggers()
             .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
             {
-                TelegramOptions? tgOptions = sp.GetService<IOptions<TelegramOptions>>()?.Value;
-                ArgumentNullException.ThrowIfNull(tgOptions);
-                TelegramBotClientOptions options = new(tgOptions.Token);
-                return new TelegramBotClient(options, httpClient);
+                TelegramOptions telegram = sp.GetRequiredService<IOptions<TelegramOptions>>().Value;
+                TelegramBotClientOptions botOptions = new(telegram.Token);
+                return new TelegramBotClient(botOptions, httpClient);
             });
 
         builder.Services.AddMassTransit(busCfg =>
         {
-            MessageBrokerOptions? mbOptions =
-                builder.Configuration.GetSection(MessageBrokerOptions.MessageBroker).Get<MessageBrokerOptions>();
-            ArgumentNullException.ThrowIfNull(mbOptions);
-
             busCfg.SetKebabCaseEndpointNameFormatter();
 
-            // Установка таймаута для клиентов запросов
             TimeSpan requestTimeout = TimeSpan.FromSeconds(10);
 
-            // Траты
+            // Клиенты для RPC-запросов
             busCfg.AddRequestClient<AddExpenseRequest>(requestTimeout);
             busCfg.AddRequestClient<GetExpensesRequest>(requestTimeout);
-
-            // Категории
             busCfg.AddRequestClient<AddCategoryRequest>(requestTimeout);
             busCfg.AddRequestClient<GetCategoriesRequest>(requestTimeout);
             busCfg.AddRequestClient<DeleteCategoryRequest>(requestTimeout);
 
+            // Подписчики
             busCfg.AddConsumer<UserCategoriesChangedConsumer>();
 
-            busCfg.UsingRabbitMq((context, configuration) =>
+            // Конфигурация RabbitMQ
+            busCfg.UsingRabbitMq((context, cfg) =>
             {
-                configuration.Host(mbOptions.HostName, h =>
+                MessageBrokerOptions mq = context.GetRequiredService<IOptions<MessageBrokerOptions>>().Value;
+
+                cfg.Host(mq.HostName, h =>
                 {
-                    h.Username(mbOptions.UserName);
-                    h.Password(mbOptions.Password);
+                    h.Username(mq.UserName);
+                    h.Password(mq.Password);
                 });
 
-                configuration.UseMessageRetry(retry => retry.Exponential(
+                cfg.UseMessageRetry(retry => retry.Exponential(
                     retryLimit: 5,
                     minInterval: TimeSpan.FromSeconds(1),
                     maxInterval: TimeSpan.FromSeconds(30),
                     intervalDelta: TimeSpan.FromSeconds(3)));
 
-                configuration.ConfigureEndpoints(context);
+                cfg.ConfigureEndpoints(context);
             });
         });
 

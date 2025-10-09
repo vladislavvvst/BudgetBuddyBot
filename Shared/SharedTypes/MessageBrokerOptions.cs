@@ -2,8 +2,8 @@
 
 public class MessageBrokerOptions
 {
-    public const string MessageBroker = nameof(MessageBroker);
-    public string HostName { get; set; } = default!;
-    public string UserName { get; set; } = default!;
-    public string Password { get; set; } = default!;
+    public const string SectionName = "MessageBroker";
+    public string HostName { get; init; } = null!;
+    public string UserName { get; init; } = null!;
+    public string Password { get; init; } = null!;
 }
