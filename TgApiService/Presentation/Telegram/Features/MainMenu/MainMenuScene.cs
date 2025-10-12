@@ -20,7 +20,6 @@ internal sealed class MainMenuScene : IScene
 
         BackStackService.Clear(chatId);
 
-        await context.StateCache.SetStateAsync(chatId, UserState.MainMenu);
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction,
             replyMarkup: UiKeyboards.BuildMainMenuInline, cancellationToken: ct);
     }
@@ -28,24 +27,7 @@ internal sealed class MainMenuScene : IScene
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-        string text = context.Update.Message?.Text ?? string.Empty;
-
-        if (string.Equals(text, UiStrings.Commands.About, StringComparison.Ordinal))
-        {
-            await context.Bot.SendMessage(chatId, UiStrings.Prompts.AboutBot,
-                parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html, cancellationToken: ct);
-            return;
-        }
-
-        if (string.Equals(text, UiStrings.Commands.Menu, StringComparison.Ordinal) ||
-            string.Equals(text, UiStrings.Commands.Start, StringComparison.Ordinal))
-        {
-            await EnterAsync(context, ct);
-            return;
-        }
-
-        await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChooseAction,
-            replyMarkup: UiKeyboards.BuildMainMenuInline, cancellationToken: ct);
+        await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
@@ -54,9 +36,35 @@ internal sealed class MainMenuScene : IScene
         long chatId = cq.Message!.Chat.Id;
         string data = cq.Data ?? string.Empty;
 
+        await context.Bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
+
         if (string.Equals(data, UiStrings.CallbackData.NavBack, StringComparison.Ordinal))
         {
             await OnBackAsync(context, ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.AddExpense, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.ExpensePickCategory, ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.Categories, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.CategoryMenu, ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.Stats, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.StatisticsPeriod, ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.LastExpenses, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.ExpenseShowLast, ct);
             return;
         }
 

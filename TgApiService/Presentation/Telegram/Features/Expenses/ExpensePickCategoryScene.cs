@@ -15,14 +15,11 @@ namespace TgApiService.Presentation.Telegram.Features.Expenses;
 /// </summary>
 internal sealed class ExpensePickCategoryScene : IScene
 {
-    public UserState State => UserState.ExpenseAddPickCategory;
+    public UserState State => UserState.ExpensePickCategory;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
-        BackStackService.Push(chatId, UserState.MainMenu);
-        await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAddPickCategory);
 
         IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
 
@@ -70,14 +67,12 @@ internal sealed class ExpensePickCategoryScene : IScene
             return;
         }
 
-        await context.StateCache.SetCategoryIdAsync(chatId, categoryId.ToString(CultureInfo.InvariantCulture));
-        await SceneRegistry.Resolve(UserState.ExpenseAddWaitAmountComment).EnterAsync(context, ct);
+        await context.StateCache.SetCategoryIdAsync(chatId, categoryId);
+        await SceneRegistry.NavigateForwardAsync(context, UserState.ExpenseAmountComment, ct);
     }
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
     {
-        long chatId = Utils.ChatId(context);
-        BackStackService.Pop(chatId);
-        await SceneRegistry.Resolve(UserState.MainMenu).EnterAsync(context, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
     }
 }

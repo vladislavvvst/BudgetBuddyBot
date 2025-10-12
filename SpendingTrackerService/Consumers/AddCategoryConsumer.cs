@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SpendingTrackerService.Consumers;
 
-internal class AddCategoryConsumer : IConsumer<AddCategoryRequest>
+internal sealed class AddCategoryConsumer : IConsumer<AddCategoryRequest>
 {
     private readonly ILogger<AddCategoryConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;

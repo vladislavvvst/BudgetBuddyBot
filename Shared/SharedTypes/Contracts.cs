@@ -7,7 +7,7 @@ public sealed record CategoryDto(long Id, string Name, bool IsSystem);
 
 // Получение категорий
 public sealed record GetCategoriesRequest(long UserId);
-public sealed record GetCategoriesResponse(long UserId, IReadOnlyList<CategoryDto> Items);
+public sealed record GetCategoriesResponse(IReadOnlyList<CategoryDto> Items);
 
 // Добавление пользовательской категории
 public sealed record AddCategoryRequest(long UserId, string Name, string RequestId);
@@ -31,4 +31,22 @@ public sealed record AddExpenseResponse(bool Success);
 
 // Получение трат
 public sealed record GetExpensesRequest(long UserId, int Page = 1, int PageSize = 10);
-public sealed record GetExpensesResponse(long UserId, IReadOnlyList<ExpenseDto> Items, int Total);
+public sealed record GetExpensesResponse(IReadOnlyList<ExpenseDto> Items);
+
+// ----- СТАТИСТИКА -----
+
+// Запросы на получение статистики за период
+
+// Полная статистика за неделю
+public sealed record GetStatsFullWeekRequest(long UserId);
+public sealed record GetStatsFullWeekResponse
+(
+    // Итоги
+    decimal Total,              // Всего расходов (сумма)
+    decimal AvgPerDay,          // Средний расход в день (сумма)
+    decimal LargestExpense,     // Крупнейшая трата (сумма)
+    // По категориям (топ 5)
+    IEnumerable<(string Name, decimal Amount)> CategoriesAmount,
+    // По дням (хронологически)
+    IEnumerable<(DateTimeOffset Date, decimal Amount)> DaysAmount
+);

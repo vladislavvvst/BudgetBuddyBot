@@ -48,4 +48,11 @@ internal class SpendingTrackerGateway : ISpendingTrackerGateway
         Response<DeleteCategoryResponse> response = await client.GetResponse<DeleteCategoryResponse>(request, ct);
         return response.Message;
     }
+
+    public async Task<GetStatsFullWeekResponse> GetStatsFullWeekAsync(GetStatsFullWeekRequest request, CancellationToken ct)
+    {
+        IRequestClient<GetStatsFullWeekRequest> client = _clients.CreateRequestClient<GetStatsFullWeekRequest>();
+        Response<GetStatsFullWeekResponse> response = await client.GetResponse<GetStatsFullWeekResponse>(request, ct);
+        return response.Message;
+    }
 }

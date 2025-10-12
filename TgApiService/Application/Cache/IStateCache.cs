@@ -8,23 +8,24 @@ namespace TgApiService.Application.Cache;
 /// </summary>
 internal enum UserState
 {
+    // === Главное меню ===
     MainMenu = 0,                       // Главное меню
-    ExpenseAddPickCategory = 1,         // Выбор категории при добавлении траты
-    ExpenseAddWaitAmountComment = 2,    // Ввод суммы и комментария
 
-    CategoryMenu = 10,                  // Меню категорий
-    CategoryAddWaitName = 11,           // Ввод имени новой категории
-    CategoryDeleteWaitChoice = 12,      // Выбор категории для удаления
+    // === Добавление трат ===
+    ExpensePickCategory = 10,           // Выбор категории при добавлении траты
+    ExpenseAmountComment = 11,          // Ввод суммы и комментария
+    ExpenseShowLast = 12,               // Показать последние траты
 
-    StatisticsWaitPeriod = 20,          // Выбор периода статистики
-    StatisticsWaitChoice = 21,          // Выбор типа статистики
-    StatisticsWaitRangeInput = 22       // Ввод диапазона дат для статистики
-};
+    // === Категории ===
+    CategoryMenu = 20,                  // Меню категорий
+    CategoryAddName = 21,               // Ввод имени новой категории
+    CategoryDelete = 22,                // Выбор категории для удаления
 
-/// <summary>
-/// Тип входящего update от Telegram.
-/// </summary>
-internal enum UpdateKind { Unknown, Message, CallbackQuery, Command }
+    // === Статистика ===
+    StatisticsPeriod = 30,              // Ожидание выбора периода
+    StatisticsMetric = 31,              // Ожидание выбора типа статистики (метрики)
+    StatsFullWeek = 32,                 // Показать статистику за неделю
+}
 
 /// <summary>
 /// Интерфейс хранилища пользовательского состояния и вспомогательных данных.
@@ -36,9 +37,14 @@ internal interface IStateCache
     Task SetStateAsync(long chatId, UserState state);
 
     // Временно выбранная категория (пока пользователь добавляет трату)
-    Task<string?> GetCategoryIdAsync(long chatId);
-    Task SetCategoryIdAsync(long chatId, string value);
+    Task<long?> GetCategoryIdAsync(long chatId);
+    Task SetCategoryIdAsync(long chatId, long categoryId);
     Task RemoveCategoryIdAsync(long chatId);
+
+    // Временно выбранный период для статистики
+    Task<string?> GetStatsPeriod(long chatId);
+    Task SetStatsPeriod(long chatId, string period);
+    Task RemoveStatsPeriod(long chatId);
 
     // Кэш списка категорий пользователя, чтобы не ходить за ними в сервис каждый раз
     Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId);

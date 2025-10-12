@@ -2,10 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using SharedTypes;
 using SpendingTrackerService.Database;
+using SpendingTrackerService.Database.Entities;
 
 namespace SpendingTrackerService.Consumers;
 
-internal class GetExpensesConsumer : IConsumer<GetExpensesRequest>
+internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
 {
     private readonly ILogger<GetExpensesConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;
@@ -22,7 +23,7 @@ internal class GetExpensesConsumer : IConsumer<GetExpensesRequest>
         int pageSize = Math.Clamp(context.Message.PageSize, 1, 100);
 
         // Базовый запрос по пользователю
-        var queryable = _dbContext.Expenses.AsNoTracking().Where(e => e.UserId == userId);
+        IQueryable<ExpenseEntity> queryable = _dbContext.Expenses.AsNoTracking().Where(e => e.UserId == userId);
 
         int total = await queryable.CountAsync(ct);
 
@@ -38,7 +39,6 @@ internal class GetExpensesConsumer : IConsumer<GetExpensesRequest>
         _logger.LogInformation("Fetched {Count} expenses for user {UserId} (page {Page} size {Size} of total {Total})",
             items.Count, userId, page, pageSize, total);
 
-        GetExpensesResponse response = new(userId, items, total);
-        await context.RespondAsync(response);
+        await context.RespondAsync(new GetExpensesResponse(items));
     }
 }

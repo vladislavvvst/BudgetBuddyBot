@@ -24,7 +24,11 @@ internal class ApplicationDbContext : DbContext
             entity.Property(x => x.CategoryId).IsRequired();
             entity.Property(x => x.Amount).HasColumnType("numeric(19,2)").IsRequired();
             entity.Property(x => x.Comment).HasMaxLength(512);
-            entity.Property(x => x.AddedAtUtc).HasDefaultValueSql("now()").IsRequired();
+            entity.Property(x => x.AddedAtUtc)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("timezone('utc', now())")
+                .ValueGeneratedOnAdd()
+                .IsRequired();
             entity.Property(x => x.RequestId).HasMaxLength(128).IsRequired();
 
             // Связь: (UserId, CategoryId) → (UserId, Id)
@@ -53,7 +57,11 @@ internal class ApplicationDbContext : DbContext
             entity.Property(x => x.Name).HasMaxLength(128).IsRequired();
             entity.Property(x => x.IsDeleted).IsRequired();
             entity.Property(x => x.IsSystem).IsRequired();
-            entity.Property(x => x.AddedAtUtc).HasDefaultValueSql("now()").IsRequired();
+            entity.Property(x => x.AddedAtUtc)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("timezone('utc', now())")
+                .ValueGeneratedOnAdd()
+                .IsRequired();
             entity.Property(x => x.RequestId).HasMaxLength(128).IsRequired(false);
 
             entity.HasIndex(x => x.UserId);

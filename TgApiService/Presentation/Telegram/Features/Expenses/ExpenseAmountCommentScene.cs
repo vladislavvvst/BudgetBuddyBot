@@ -15,18 +15,15 @@ namespace TgApiService.Presentation.Telegram.Features.Expenses;
 /// Попадаем сюда после выбора категории.
 /// Проверяем ввод, шлем RPC AddExpenseAsync.
 /// </summary>
-internal sealed class ExpenseAmountScene : IScene
+internal sealed class ExpenseAmountCommentScene : IScene
 {
+    public UserState State => UserState.ExpenseAmountComment;
+
     private const int MaxExpenseAmountNameLength = 64;
-    public UserState State => UserState.ExpenseAddWaitAmountComment;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
-        BackStackService.Push(chatId, UserState.ExpenseAddPickCategory);
-
-        await context.StateCache.SetStateAsync(chatId, UserState.ExpenseAddWaitAmountComment);
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.StartExpensePrompt, parseMode: ParseMode.Html,
             replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
     }
@@ -50,12 +47,11 @@ internal sealed class ExpenseAmountScene : IScene
             return;
         }
 
-        string? categoryIdStr = await context.StateCache.GetCategoryIdAsync(chatId);
+        long? categoryId = await context.StateCache.GetCategoryIdAsync(chatId);
 
-        if (string.IsNullOrEmpty(categoryIdStr) ||
-            !long.TryParse(categoryIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out long categoryId))
+        if (!categoryId.HasValue)
         {
-            await SceneRegistry.Resolve(UserState.ExpenseAddPickCategory).EnterAsync(context, ct);
+            // Невозможный случай, поскольку категории выбираются по кнопкам
             return;
         }
 
@@ -72,29 +68,20 @@ internal sealed class ExpenseAmountScene : IScene
             return;
         }
 
-        string categoryName = await ResolveCategoryNameAsync(context, categoryId, ct);
+        string categoryName = await ResolveCategoryNameAsync(context, categoryId.Value, ct);
 
         try
         {
             string requestId = $"{chatId}:{msg.MessageId}";
 
-            AddExpenseRequest request = new(chatId, categoryId, amount, comment, requestId);
+            AddExpenseRequest request = new(chatId, categoryId.Value, amount, comment, requestId);
             AddExpenseResponse response = await context.Tracker.AddExpenseAsync(request, ct);
 
             if (response.Success)
-            {
                 await context.Bot.SendMessage(chatId, UiStrings.ExpenseAdded(amount, categoryName, comment),
                     parseMode: ParseMode.Html, cancellationToken: ct);
-
-                await context.StateCache.RemoveCategoryIdAsync(chatId);
-
-                BackStackService.Pop(chatId);
-                await SceneRegistry.Resolve(UserState.MainMenu).EnterAsync(context, ct);
-
-                return;
-            }
-
-            await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorAddingExpense, cancellationToken: ct);
+            else
+                await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorAddingExpense, cancellationToken: ct);
         }
         catch (RequestFaultException ex)
         {
@@ -106,6 +93,8 @@ internal sealed class ExpenseAmountScene : IScene
             context.Logger.LogError("AddExpense timeout");
             await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorTimeout, cancellationToken: ct);
         }
+
+        await SceneRegistry.NavigateForwardAsync(context, UserState.MainMenu, ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
@@ -127,10 +116,7 @@ internal sealed class ExpenseAmountScene : IScene
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
     {
-        long chatId = Utils.ChatId(context);
-        await context.StateCache.RemoveCategoryIdAsync(chatId);
-        BackStackService.Pop(chatId);
-        await SceneRegistry.Resolve(UserState.ExpenseAddPickCategory).EnterAsync(context, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
     }
 
     /// <summary>

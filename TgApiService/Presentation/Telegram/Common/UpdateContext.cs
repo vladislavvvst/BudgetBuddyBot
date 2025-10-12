@@ -9,7 +9,7 @@ namespace TgApiService.Presentation.Telegram.Common;
 /// Объединенный контекст, который сцены и роутер получают на каждый update.
 /// Позволяет не таскать все зависимости по отдельности.
 /// </summary>
-internal readonly record struct UpdateContext
+internal sealed record UpdateContext
 (
     ILogger Logger,
     IStateCache StateCache,

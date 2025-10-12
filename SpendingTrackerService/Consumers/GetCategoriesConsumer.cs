@@ -6,7 +6,7 @@ using SpendingTrackerService.Database.Entities;
 
 namespace SpendingTrackerService.Consumers;
 
-internal class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
+internal sealed class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
 {
     private readonly ILogger<GetCategoriesConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;
@@ -28,7 +28,7 @@ internal class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
             .Select(c => new CategoryDto(c.Id, c.Name, c.IsSystem))
             .ToListAsync(ct);
 
-        await context.RespondAsync(new GetCategoriesResponse(userId, items));
+        await context.RespondAsync(new GetCategoriesResponse(items));
     }
 
     private async Task EnsureUserDefaultsCategories(long userId, CancellationToken ct)

@@ -19,11 +19,8 @@ internal sealed class CategoryMenuScene : IScene
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
-        BackStackService.Push(chatId, UserState.MainMenu);
-        await context.StateCache.SetStateAsync(chatId, UserState.CategoryMenu);
-
         IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
+
         if (categories.Count is 0)
         {
             await context.Bot.SendMessage(chatId, UiStrings.Info.NoCategories, parseMode: ParseMode.Html,
@@ -63,13 +60,13 @@ internal sealed class CategoryMenuScene : IScene
 
         if (string.Equals(data, UiStrings.CallbackData.CatAdd, StringComparison.Ordinal))
         {
-            await SceneRegistry.Resolve(UserState.CategoryAddWaitName).EnterAsync(context, ct);
+            await SceneRegistry.NavigateForwardAsync(context, UserState.CategoryAddName, ct);
             return;
         }
 
         if (string.Equals(data, UiStrings.CallbackData.CatDel, StringComparison.Ordinal))
         {
-            await SceneRegistry.Resolve(UserState.CategoryDeleteWaitChoice).EnterAsync(context, ct);
+            await SceneRegistry.NavigateForwardAsync(context, UserState.CategoryDelete, ct);
             return;
         }
 
@@ -78,8 +75,6 @@ internal sealed class CategoryMenuScene : IScene
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
     {
-        long chatId = Utils.ChatId(context);
-        BackStackService.Pop(chatId);
-        await SceneRegistry.Resolve(UserState.MainMenu).EnterAsync(context, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
     }
 }

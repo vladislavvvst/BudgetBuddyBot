@@ -6,7 +6,7 @@ using SpendingTrackerService.Database.Entities;
 
 namespace SpendingTrackerService.Consumers;
 
-internal class AddExpenseConsumer : IConsumer<AddExpenseRequest>
+internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
 {
     private readonly ILogger<AddExpenseConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;

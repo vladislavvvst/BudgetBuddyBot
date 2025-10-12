@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace TgApiService.Configuration.Options;
+﻿namespace TgApiService.Configuration.Options;
 
 internal class TelegramOptions
 {

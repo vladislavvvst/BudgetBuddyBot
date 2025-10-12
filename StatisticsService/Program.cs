@@ -1,12 +1,10 @@
 using MassTransit;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SharedTypes;
-using SpendingTrackerService.Consumers;
-using SpendingTrackerService.Database;
+using StatisticsService.Consumers;
 
-namespace SpendingTrackerService;
+namespace StatisticsService;
 
 internal class Program
 {
@@ -16,11 +14,6 @@ internal class Program
 
         builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
 
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        {
-            options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ApplicationDbContext)));
-        });
-
         builder.Services.Configure<MessageBrokerOptions>(
             builder.Configuration.GetSection(MessageBrokerOptions.SectionName));
 
@@ -28,18 +21,7 @@ internal class Program
         {
             busCfg.SetKebabCaseEndpointNameFormatter();
 
-            busCfg.AddEntityFrameworkOutbox<ApplicationDbContext>(outbox =>
-            {
-                outbox.QueryDelay = TimeSpan.FromSeconds(1);
-                outbox.UsePostgres();
-                outbox.UseBusOutbox();
-            });
-
-            busCfg.AddConsumer<AddExpenseConsumer>();
-            busCfg.AddConsumer<GetExpensesConsumer>();
-            busCfg.AddConsumer<AddCategoryConsumer>();
-            busCfg.AddConsumer<GetCategoriesConsumer>();
-            busCfg.AddConsumer<DeleteCategoryConsumer>();
+            busCfg.AddConsumer<StatsFullWeekConsumer>();
 
             busCfg.UsingRabbitMq((context, cfg) =>
             {

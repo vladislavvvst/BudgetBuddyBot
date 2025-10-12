@@ -6,7 +6,7 @@ using SpendingTrackerService.Database.Entities;
 
 namespace SpendingTrackerService.Consumers;
 
-internal class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
+internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 {
     private readonly ILogger<DeleteCategoryConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;

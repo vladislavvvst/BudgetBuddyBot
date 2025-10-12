@@ -11,10 +11,10 @@ internal static class BackStackService
 {
     private static readonly ConcurrentDictionary<long, Stack<UserState>?> Stacks = new();
 
-    public static void Push(long chatId, UserState state)
+    public static void Push(long chatId, UserState currentState)
     {
         Stack<UserState>? stack = Stacks.GetOrAdd(chatId, static _ => new Stack<UserState>());
-        stack?.Push(state);
+        stack?.Push(currentState);
     }
 
     public static UserState? Pop(long chatId)

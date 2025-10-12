@@ -16,14 +16,11 @@ namespace TgApiService.Presentation.Telegram.Features.Categories;
 /// </summary>
 internal sealed class CategoryDeleteScene : IScene
 {
-    public UserState State => UserState.CategoryDeleteWaitChoice;
+    public UserState State => UserState.CategoryDelete;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
-        BackStackService.Push(chatId, UserState.CategoryMenu);
-        await context.StateCache.SetStateAsync(chatId, UserState.CategoryDeleteWaitChoice);
 
         List<CategoryDto> categories = (await Utils.GetUserCategories(context, ct)).Where(c => !c.IsSystem).ToList();
 
@@ -102,13 +99,11 @@ internal sealed class CategoryDeleteScene : IScene
             await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorTimeout, cancellationToken: ct);
         }
 
-        await SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(context, ct);
+        await SceneRegistry.NavigateForwardAsync(context, UserState.CategoryMenu, ct);
     }
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
     {
-        long chatId = Utils.ChatId(context);
-        BackStackService.Pop(chatId);
-        await SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(context, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
     }
 }

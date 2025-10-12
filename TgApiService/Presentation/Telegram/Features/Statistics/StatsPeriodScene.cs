@@ -4,7 +4,7 @@ using TgApiService.Application.Cache;
 using TgApiService.Presentation.Telegram.Common;
 using TgApiService.Presentation.Telegram.Features.UI;
 
-namespace TgApiService.Presentation.Telegram.Features.Stats;
+namespace TgApiService.Presentation.Telegram.Features.Statistics;
 
 /// <summary>
 /// Сцена выбора периода для статистики.
@@ -13,15 +13,11 @@ namespace TgApiService.Presentation.Telegram.Features.Stats;
 /// </summary>
 internal sealed class StatsPeriodScene : IScene
 {
-    public UserState State => UserState.StatisticsWaitPeriod;
+    public UserState State => UserState.StatisticsPeriod;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-
-        BackStackService.Push(chatId, UserState.MainMenu);
-        await context.StateCache.SetStateAsync(chatId, UserState.StatisticsWaitPeriod);
-
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.ChoosePeriod,
             replyMarkup: UiKeyboards.BuildStatsMenuInline, cancellationToken: ct);
     }
@@ -29,14 +25,6 @@ internal sealed class StatsPeriodScene : IScene
     public async Task OnMessageAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-        string text = context.Update.Message?.Text ?? string.Empty;
-
-        if (string.Equals(text, UiStrings.Commands.Cancel, StringComparison.Ordinal))
-        {
-            await OnBackAsync(context, ct);
-            return;
-        }
-
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
@@ -54,21 +42,33 @@ internal sealed class StatsPeriodScene : IScene
             return;
         }
 
-        if (string.Equals(data, UiStrings.CallbackData.StatsFullWeek, StringComparison.Ordinal) ||
-            string.Equals(data, UiStrings.CallbackData.StatsToday, StringComparison.Ordinal) ||
-            string.Equals(data, UiStrings.CallbackData.Stats7Days, StringComparison.Ordinal) ||
-            string.Equals(data, UiStrings.CallbackData.StatsMonth, StringComparison.Ordinal) ||
-            string.Equals(data, UiStrings.CallbackData.StatsRange, StringComparison.Ordinal))
+        if (string.Equals(data, UiStrings.CallbackData.StatsFullWeek, StringComparison.Ordinal))
         {
-            await context.Bot.SendMessage(chatId, "нету RPC к сервису статистики", cancellationToken: ct);
+            await SceneRegistry.NavigateForwardAsync(context, UserState.StatsFullWeek, ct);
             return;
         }
+
+        if (string.Equals(data, UiStrings.CallbackData.StatsRange, StringComparison.Ordinal))
+        {
+            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.StatsRange);
+            await context.Bot.SendMessage(chatId, "Календаря пока нету :(", cancellationToken: ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.StatsToday, StringComparison.Ordinal))
+            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.StatsToday);
+
+        if (string.Equals(data, UiStrings.CallbackData.Stats7Days, StringComparison.Ordinal))
+            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.Stats7Days);
+
+        if (string.Equals(data, UiStrings.CallbackData.StatsMonth, StringComparison.Ordinal))
+            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.StatsMonth);
+
+        await SceneRegistry.NavigateForwardAsync(context, UserState.StatisticsMetric, ct);
     }
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
     {
-        long chatId = Utils.ChatId(context);
-        BackStackService.Pop(chatId);
-        await SceneRegistry.Resolve(UserState.MainMenu).EnterAsync(context, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
     }
 }

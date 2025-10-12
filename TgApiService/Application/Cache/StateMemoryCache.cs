@@ -18,11 +18,9 @@ internal class StateMemoryCache : IStateCache
     public Task<UserState> GetStateAsync(long chatId)
     {
         string cacheKey = BuildUserStateKey(chatId);
-
-        if (_cache.TryGetValue(cacheKey, out UserState userState))
-            return Task.FromResult(userState);
-
-        return Task.FromResult(UserState.MainMenu);
+        return Task.FromResult(_cache.TryGetValue(cacheKey, out UserState userState)
+            ? userState
+            : UserState.MainMenu);
     }
 
     public Task SetStateAsync(long chatId, UserState state)
@@ -33,25 +31,24 @@ internal class StateMemoryCache : IStateCache
     }
 
     // Категория, выбранная пользователем при добавлении расхода
-    public Task SetCategoryIdAsync(long chatId, string value)
+    public Task SetCategoryIdAsync(long chatId, long categoryId)
     {
-        string cacheKey = BuildTempKey(chatId);
-        _cache.Set(cacheKey, value);
+        string cacheKey = BuildCategoryChooseKey(chatId);
+        _cache.Set(cacheKey, categoryId);
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetCategoryIdAsync(long chatId)
+    public Task<long?> GetCategoryIdAsync(long chatId)
     {
-        string cacheKey = BuildTempKey(chatId);
-        if (_cache.TryGetValue(cacheKey, out string? value))
-            return Task.FromResult(value);
-
-        return Task.FromResult<string?>(null);
+        string cacheKey = BuildCategoryChooseKey(chatId);
+        return _cache.TryGetValue(cacheKey, out long? categoryId)
+            ? Task.FromResult(categoryId)
+            : Task.FromResult<long?>(null);
     }
 
     public Task RemoveCategoryIdAsync(long chatId)
     {
-        string cacheKey = BuildTempKey(chatId);
+        string cacheKey = BuildCategoryChooseKey(chatId);
         _cache.Remove(cacheKey);
         return Task.CompletedTask;
     }
@@ -59,8 +56,8 @@ internal class StateMemoryCache : IStateCache
     // Кэш списка категорий пользователя
     public Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId)
     {
-        string key = BuildCategoriesKey(chatId);
-        _cache.TryGetValue(key, out IReadOnlyList<CategoryDto>? categories);
+        string cacheKey = BuildCategoriesKey(chatId);
+        _cache.TryGetValue(cacheKey, out IReadOnlyList<CategoryDto>? categories);
         return Task.FromResult(categories ?? []);
     }
 
@@ -71,9 +68,31 @@ internal class StateMemoryCache : IStateCache
         return Task.CompletedTask;
     }
 
+    // Временно выбранный период для статистики
+    public Task<string?> GetStatsPeriod(long chatId)
+    {
+        string cacheKey = BuildStatsPeriodKey(chatId);
+        _cache.TryGetValue(cacheKey, out string? period);
+        return Task.FromResult(period);
+    }
+
+    public Task SetStatsPeriod(long chatId, string period)
+    {
+        string cacheKey = BuildStatsPeriodKey(chatId);
+        _cache.Set(cacheKey, period);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveStatsPeriod(long chatId)
+    {
+        string cacheKey = BuildStatsPeriodKey(chatId);
+        _cache.Remove(cacheKey);
+        return Task.CompletedTask;
+    }
+
     // Вспомогательные методы формирования ключей
     private static string BuildCategoriesKey(long chatId) => $"user_categories:{chatId}";
     private static string BuildUserStateKey(long chatId) => $"user_state:{chatId}";
-    private static string BuildTempKey(long chatId) => $"category_id:{chatId}";
-    private static string BuildDefaultCategoriesKey(long chatId) => $"default_categories_seeded:{chatId}";
+    private static string BuildCategoryChooseKey(long chatId) => $"category_choose:{chatId}";
+    private static string BuildStatsPeriodKey(long chatId) => $"stats_period:{chatId}";
 }

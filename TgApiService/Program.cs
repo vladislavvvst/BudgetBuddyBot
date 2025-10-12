@@ -53,6 +53,7 @@ internal class Program
             busCfg.AddRequestClient<AddCategoryRequest>(requestTimeout);
             busCfg.AddRequestClient<GetCategoriesRequest>(requestTimeout);
             busCfg.AddRequestClient<DeleteCategoryRequest>(requestTimeout);
+            busCfg.AddRequestClient<GetStatsFullWeekRequest>(requestTimeout);
 
             // Подписчики
             busCfg.AddConsumer<UserCategoriesChangedConsumer>();
@@ -95,7 +96,7 @@ internal class Program
             ValidateScopes = true
         }));
 
-        IHost host = builder.Build();
+        using IHost host = builder.Build();
         await host.RunAsync();
     }
 }

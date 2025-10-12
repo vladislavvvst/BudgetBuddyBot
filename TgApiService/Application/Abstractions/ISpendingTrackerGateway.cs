@@ -15,4 +15,7 @@ internal interface ISpendingTrackerGateway
     Task<AddCategoryResponse> AddCategoryAsync(AddCategoryRequest request, CancellationToken ct);
     Task<GetCategoriesResponse> GetCategoriesAsync(GetCategoriesRequest request, CancellationToken ct);
     Task<DeleteCategoryResponse> DeleteCategoryAsync(DeleteCategoryRequest request, CancellationToken ct);
+
+    // Статистика
+    Task<GetStatsFullWeekResponse> GetStatsFullWeekAsync(GetStatsFullWeekRequest request, CancellationToken ct);
 }

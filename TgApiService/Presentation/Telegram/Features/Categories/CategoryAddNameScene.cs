@@ -16,15 +16,13 @@ namespace TgApiService.Presentation.Telegram.Features.Categories;
 /// </summary>
 internal sealed class CategoryAddNameScene : IScene
 {
+    public UserState State => UserState.CategoryAddName;
+
     private const int MaxCategoryNameLength = 64;
-    public UserState State => UserState.CategoryAddWaitName;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-        BackStackService.Push(chatId, UserState.CategoryMenu);
-
-        await context.StateCache.SetStateAsync(chatId, UserState.CategoryAddWaitName);
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.CategoryAdd, parseMode: ParseMode.Html,
             replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
     }
@@ -74,13 +72,11 @@ internal sealed class CategoryAddNameScene : IScene
             {
                 await context.StateCache.SetCategoriesAsync(chatId, []);
                 await context.Bot.SendMessage(chatId, UiStrings.CategoryAdded(name), parseMode: ParseMode.Html, cancellationToken: ct);
-
-                BackStackService.Pop(chatId);
-                await SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(context, ct);
-                return;
             }
-
-            await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorAddingCategory, cancellationToken: ct);
+            else
+            {
+                await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorAddingCategory, cancellationToken: ct);
+            }
         }
         catch (RequestFaultException ex)
         {
@@ -92,6 +88,8 @@ internal sealed class CategoryAddNameScene : IScene
             context.Logger.LogError("AddCategory timeout");
             await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorTimeout, cancellationToken: ct);
         }
+
+        await SceneRegistry.NavigateForwardAsync(context, UserState.CategoryMenu, ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
@@ -113,9 +111,7 @@ internal sealed class CategoryAddNameScene : IScene
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
     {
-        long chatId = Utils.ChatId(context);
-        BackStackService.Pop(chatId);
-        await SceneRegistry.Resolve(UserState.CategoryMenu).EnterAsync(context, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
     }
 
     private static string NormalizeName(string input)

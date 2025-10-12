@@ -23,8 +23,8 @@ internal static class UiKeyboards
     public static InlineKeyboardMarkup BuildMainMenuInline { get; } = new
     ([
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.AddExpense, UiStrings.CallbackData.AddExpense)],
-        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Stats, UiStrings.CallbackData.Stats)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Categories, UiStrings.CallbackData.Categories)],
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Stats, UiStrings.CallbackData.Stats)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.LastExpenses, UiStrings.CallbackData.LastExpenses)]
     ]);
 
@@ -36,6 +36,14 @@ internal static class UiKeyboards
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMonth,    UiStrings.CallbackData.StatsMonth)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsRange,    UiStrings.CallbackData.StatsRange)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Back,          UiStrings.CallbackData.NavBack)]
+    ]);
+
+    public static InlineKeyboardMarkup BuildStatsMetricInline { get; } = new
+    ([
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricTotalAmount, UiStrings.CallbackData.StatsMetricTotalAmount)],
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricByCategory, UiStrings.CallbackData.StatsMetricByCategory)],
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricDynByDay, UiStrings.CallbackData.StatsMetricDynByDay)],
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Back, UiStrings.CallbackData.NavBack)]
     ]);
 
     public static InlineKeyboardMarkup BuildCategoriesPickKb(IReadOnlyList<CategoryDto> categories)

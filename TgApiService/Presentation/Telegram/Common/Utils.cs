@@ -23,14 +23,13 @@ internal static class Utils
         try
         {
             GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new(chatId), ct);
-            categories = response.Items;
 
-            context.Logger.LogInformation("Loaded {Count} categories for user {UserId} from SpendingTrackerService", categories.Count, chatId);
+            context.Logger.LogInformation("Loaded {Count} categories for user {UserId} from SpendingTrackerService", response.Items.Count, chatId);
 
-            if (categories.Count > 0)
-                await context.StateCache.SetCategoriesAsync(chatId, categories);
+            if (response.Items.Count > 0)
+                await context.StateCache.SetCategoriesAsync(chatId, response.Items);
 
-            return categories;
+            return response.Items;
         }
         catch (RequestTimeoutException)
         {

@@ -32,6 +32,10 @@ internal static class UiStrings
         public const string Stats7Days = "stats:7days";
         public const string StatsMonth = "stats:month";
         public const string StatsRange = "stats:range";
+
+        public const string StatsMetricTotalAmount = "stats:metric:total_amount";
+        public const string StatsMetricByCategory  = "stats:metric:by_category";
+        public const string StatsMetricDynByDay    = "stats:metric:dyn_by_day";
     }
 
     // ==============
@@ -67,6 +71,10 @@ internal static class UiStrings
         public const string Stats7Days    = "7 дней";
         public const string StatsMonth    = "Месяц";
         public const string StatsRange    = "📆 Диапазон";
+
+        public const string StatsMetricTotalAmount = "💰 Общая сумма";
+        public const string StatsMetricByCategory  = "🗂️ По категориям";
+        public const string StatsMetricDynByDay    = "📈 Динамика по дням";
     }
 
     // ==============
@@ -94,6 +102,8 @@ internal static class UiStrings
         public const string StartExpensePrompt =
             "Введите сумму и комментарий (опционально), например:\n" +
             "<b>105590 Iphone 16 Pro Max 256 GB</b>";
+
+        public const string SelectMetricPrompt = "Выберите метрику:";
     }
 
     // ==============
