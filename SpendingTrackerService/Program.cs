@@ -65,6 +65,12 @@ internal class Program
             });
         });
 
+        builder.ConfigureContainer(new DefaultServiceProviderFactory(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true
+        }));
+
         IHost host = builder.Build();
         host.Run();
     }
