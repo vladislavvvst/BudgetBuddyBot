@@ -1,33 +1,23 @@
 ﻿using MassTransit;
-using Microsoft.EntityFrameworkCore;
 using SharedTypes;
-using SpendingTrackerService.Database;
-using SpendingTrackerService.Database.Entities;
+using SpendingTrackerService.Database.Repository;
 
 namespace SpendingTrackerService.Consumers;
 
 internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 {
     private readonly ILogger<DeleteCategoryConsumer> _logger;
-    private readonly ApplicationDbContext _dbContext;
+    private readonly ICategoryRepository _categories;
 
-    public DeleteCategoryConsumer(ILogger<DeleteCategoryConsumer> logger, ApplicationDbContext dbContext)
-        => (_logger, _dbContext) = (logger, dbContext);
+    public DeleteCategoryConsumer(ILogger<DeleteCategoryConsumer> logger, ICategoryRepository categories)
+        => (_logger, _categories) = (logger, categories);
 
     public async Task Consume(ConsumeContext<DeleteCategoryRequest> context)
     {
         DeleteCategoryRequest request = context.Message;
         CancellationToken ct = context.CancellationToken;
 
-        _logger.LogInformation("DeleteCategory: user={UserId}, categoryId={CategoryId}, req={RequestId}",
-            request.UserId, request.CategoryId, request.RequestId);
-
-        // Ищем категорию пользователя
-        CategoryEntity? category = await _dbContext.Categories
-            .SingleOrDefaultAsync(c => c.UserId == request.UserId && c.Id == request.CategoryId, ct);
-
-        // Нет такой / уже удалена / системная — удалять нельзя
-        if (category is null || category.IsDeleted || category.IsSystem)
+        if (string.IsNullOrWhiteSpace(request.RequestId) || request.CategoryId <= 0)
         {
             await context.RespondAsync(new DeleteCategoryResponse(false));
             return;
@@ -35,37 +25,33 @@ internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 
         try
         {
-            category.IsDeleted = true;
-            await _dbContext.SaveChangesAsync(ct);
-            await context.RespondAsync(new DeleteCategoryResponse(true));
+            bool success = await _categories.SoftDeleteAsync(request.UserId, request.CategoryId, request.RequestId, ct);
+            await context.RespondAsync(new DeleteCategoryResponse(success));
 
-            _logger.LogInformation("Category soft-deleted: user={UserId}, categoryId={CategoryId}",
-                request.UserId, request.CategoryId);
+            if (success)
+            {
+                _logger.LogInformation(
+                    "[DeleteCategory] Soft-deleted user={UserId}, categoryId={CategoryId}, corr={CorrelationId}, conv={ConversationId}",
+                    request.UserId,
+                    request.CategoryId,
+                    context.CorrelationId,
+                    context.ConversationId
+                );
 
-            IReadOnlyList<CategoryDto> items = await GetCategoriesFromDbAsync(request.UserId, ct);
-            await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogWarning(ex, "DbUpdateException while deleting category user={UserId}, categoryId={CategoryId}",
-                request.UserId, request.CategoryId);
-            await context.RespondAsync(new DeleteCategoryResponse(false));
+                IReadOnlyList<CategoryDto> items = await _categories.GetActiveForUserAsync(request.UserId, ct);
+                await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while deleting category user={UserId}, categoryId={CategoryId}",
-                request.UserId, request.CategoryId);
+            _logger.LogError(ex,
+                "[DeleteCategory] Unexpected error user={UserId}, categoryId={CategoryId}, corr={CorrelationId}, conv={ConversationId}",
+                request.UserId,
+                request.CategoryId,
+                context.CorrelationId,
+                context.ConversationId);
+
             await context.RespondAsync(new DeleteCategoryResponse(false));
         }
-    }
-
-    private async Task<IReadOnlyList<CategoryDto>> GetCategoriesFromDbAsync(long userId, CancellationToken ct)
-    {
-        return await _dbContext.Categories
-            .AsNoTracking()
-            .Where(c => c.UserId == userId && !c.IsDeleted)
-            .OrderBy(c => c.Name)
-            .Select(c => new CategoryDto(c.Id, c.Name, c.IsSystem))
-            .ToListAsync(ct);
     }
 }

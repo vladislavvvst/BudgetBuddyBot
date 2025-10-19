@@ -1,18 +1,16 @@
 ﻿using MassTransit;
-using Microsoft.EntityFrameworkCore;
 using SharedTypes;
-using SpendingTrackerService.Database;
-using SpendingTrackerService.Database.Entities;
+using SpendingTrackerService.Database.Repository;
 
 namespace SpendingTrackerService.Consumers;
 
 internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
 {
     private readonly ILogger<GetExpensesConsumer> _logger;
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IExpenseRepository _expenses;
 
-    public GetExpensesConsumer(ILogger<GetExpensesConsumer> logger, ApplicationDbContext dbContext)
-        => (_logger, _dbContext) = (logger, dbContext);
+    public GetExpensesConsumer(ILogger<GetExpensesConsumer> logger, IExpenseRepository expenses)
+        => (_logger, _expenses) = (logger, expenses);
 
     public async Task Consume(ConsumeContext<GetExpensesRequest> context)
     {
@@ -22,23 +20,34 @@ internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
         int page = Math.Max(1, context.Message.Page);
         int pageSize = Math.Clamp(context.Message.PageSize, 1, 100);
 
-        // Базовый запрос по пользователю
-        IQueryable<ExpenseEntity> queryable = _dbContext.Expenses.AsNoTracking().Where(e => e.UserId == userId);
+        try
+        {
+            PagedExpenses pageResult = await _expenses.GetPagedAsync(userId, page, pageSize, ct);
+            await context.RespondAsync(new GetExpensesResponse(pageResult.Items));
 
-        int total = await queryable.CountAsync(ct);
+            _logger.LogInformation(
+                "[GetExpenses] user={UserId}, page={Page}/{PageSize}, fetched={Count}, total={Total}, corr={CorrelationId}, conv={ConversationId}",
+                userId,
+                pageResult.Page,
+                pageResult.PageSize,
+                pageResult.Items.Count,
+                pageResult.Total,
+                context.CorrelationId,
+                context.ConversationId
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[GetExpenses] Unexpected error user={UserId}, page={Page}, size={Size}, corr={CorrelationId}, conv={ConversationId}",
+                userId,
+                page,
+                pageSize,
+                context.CorrelationId,
+                context.ConversationId
+            );
 
-        // Пагинация (с использованием tie-breaker по Id)
-        List<ExpenseDto> items = await queryable
-            .OrderByDescending(e => e.AddedAtUtc)
-            .ThenByDescending(e => e.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(x => new ExpenseDto(x.CategoryId, x.Amount, x.Comment, x.AddedAtUtc))
-            .ToListAsync(ct);
-
-        _logger.LogInformation("Fetched {Count} expenses for user {UserId} (page {Page} size {Size} of total {Total})",
-            items.Count, userId, page, pageSize, total);
-
-        await context.RespondAsync(new GetExpensesResponse(items));
+            await context.RespondAsync(new GetExpensesResponse([]));
+        }
     }
 }

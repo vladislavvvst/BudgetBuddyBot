@@ -1,137 +1,58 @@
 ﻿using MassTransit;
-using Microsoft.EntityFrameworkCore;
 using SharedTypes;
-using SpendingTrackerService.Database;
-using SpendingTrackerService.Database.Entities;
-using System.Text.RegularExpressions;
+using SpendingTrackerService.Database.Repository;
 
 namespace SpendingTrackerService.Consumers;
 
 internal sealed class AddCategoryConsumer : IConsumer<AddCategoryRequest>
 {
     private readonly ILogger<AddCategoryConsumer> _logger;
-    private readonly ApplicationDbContext _dbContext;
+    private readonly ICategoryRepository _categories;
 
-    public AddCategoryConsumer(ILogger<AddCategoryConsumer> logger, ApplicationDbContext dbContext)
-        => (_logger, _dbContext) = (logger, dbContext);
+    public AddCategoryConsumer(ILogger<AddCategoryConsumer> logger, ICategoryRepository categories)
+        => (_logger, _categories) = (logger, categories);
 
     public async Task Consume(ConsumeContext<AddCategoryRequest> context)
     {
         AddCategoryRequest request = context.Message;
         CancellationToken ct = context.CancellationToken;
 
-        string rawName = (request.Name ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(rawName))
+        if (string.IsNullOrWhiteSpace(request.RequestId) || string.IsNullOrWhiteSpace(request.Name))
         {
             await context.RespondAsync(new AddCategoryResponse(false));
             return;
-        }
-
-        string name = Capitalize(CollapseSpaces(rawName));
-        string normalized = name.ToLowerInvariant();
-
-        bool activeExists = await ActiveExistsAsync(request.UserId, normalized, ct);
-        if (activeExists)
-        {
-            await context.RespondAsync(new AddCategoryResponse(false));
-            return;
-        }
-
-        CategoryEntity? deleted = await GetDeletedAsync(request.UserId, normalized, ct);
-        bool restore = deleted is not null;
-
-        if (restore)
-        {
-            // Перед восстановлением проверяем, что за время между запросом и восстановлением
-            // не появилась активная категория с таким именем
-            bool conflict = await ActiveExistsAsync(request.UserId, normalized, ct);
-            if (conflict)
-            {
-                await context.RespondAsync(new AddCategoryResponse(false));
-                return;
-            }
-
-            deleted!.IsDeleted = false;
-        }
-        else
-        {
-            await _dbContext.Categories.AddAsync(new CategoryEntity
-            {
-                UserId = request.UserId,
-                Name = name,
-                IsSystem = false,
-                IsDeleted = false,
-                RequestId = request.RequestId
-            }, ct);
         }
 
         try
         {
-            await _dbContext.SaveChangesAsync(ct);
-            await context.RespondAsync(new AddCategoryResponse(true));
+            AddCategoryResult result = await _categories.AddOrRestoreAsync(request.UserId, request.Name, request.RequestId, ct);
+            await context.RespondAsync(new AddCategoryResponse(result.Success));
 
-            _logger.LogInformation("{Action} category '{Name}' for user {UserId}",
-                restore ? "Restored" : "Added", name, request.UserId);
+            if (result.Success)
+            {
+                _logger.LogInformation(
+                    "[AddCategory] {Action} '{Name}' user={UserId}, catId={CategoryId}, corr={CorrelationId}, conv={ConversationId}",
+                    result.Restored ? "Restored" : "Added",
+                    request.Name,
+                    request.UserId,
+                    result.CategoryId,
+                    context.CorrelationId,
+                    context.ConversationId);
 
-            IReadOnlyList<CategoryDto> items = await GetCategoriesFromDbAsync(request.UserId, ct);
-            await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogWarning(ex,
-                "Unique conflict while adding/restoring category '{Name}' for user {UserId}",
-                name, request.UserId);
-
-            bool nowExists = await ActiveExistsAsync(request.UserId, normalized, ct);
-            await context.RespondAsync(new AddCategoryResponse(nowExists));
+                IReadOnlyList<CategoryDto> items = await _categories.GetActiveForUserAsync(request.UserId, ct);
+                await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "AddCategory failed for user {UserId}, name='{Name}'",
-                request.UserId, name);
+                "[AddCategory] Unexpected error user={UserId}, name='{Name}', corr={CorrelationId}, conv={ConversationId}",
+                request.UserId,
+                request.Name,
+                context.CorrelationId,
+                context.ConversationId);
 
             await context.RespondAsync(new AddCategoryResponse(false));
         }
-    }
-
-    private Task<bool> ActiveExistsAsync(long userId, string normalizedLowerName, CancellationToken ct)
-    {
-        return _dbContext.Categories
-            .AsNoTracking()
-            .AnyAsync(c => c.UserId == userId
-                           && !c.IsDeleted
-                           && c.Name.ToLower() == normalizedLowerName, ct);
-    }
-
-    private Task<CategoryEntity?> GetDeletedAsync(long userId, string normalizedLowerName, CancellationToken ct)
-    {
-        return _dbContext.Categories
-            .Where(c => c.UserId == userId
-                        && c.IsDeleted
-                        && !c.IsSystem
-                        && c.Name.ToLower() == normalizedLowerName)
-            .OrderByDescending(c => c.Id)
-            .FirstOrDefaultAsync(ct);
-    }
-
-    private async Task<IReadOnlyList<CategoryDto>> GetCategoriesFromDbAsync(long userId, CancellationToken ct)
-    {
-        return await _dbContext.Categories
-            .AsNoTracking()
-            .Where(c => c.UserId == userId && !c.IsDeleted)
-            .OrderBy(c => c.Name)
-            .Select(c => new CategoryDto(c.Id, c.Name, c.IsSystem))
-            .ToListAsync(ct);
-    }
-
-    private static string CollapseSpaces(string s) => Regex.Replace(s, @"\s{2,}", " ").Trim();
-
-    private static string Capitalize(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return input;
-        input = input.Trim();
-        return char.ToUpperInvariant(input[0]) + input[1..].ToLowerInvariant();
     }
 }

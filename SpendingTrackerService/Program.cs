@@ -5,6 +5,7 @@ using Serilog;
 using SharedTypes;
 using SpendingTrackerService.Consumers;
 using SpendingTrackerService.Database;
+using SpendingTrackerService.Database.Repository;
 
 namespace SpendingTrackerService;
 
@@ -64,6 +65,9 @@ internal class Program
                 cfg.ConfigureEndpoints(context);
             });
         });
+
+        builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+        builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 
         builder.ConfigureContainer(new DefaultServiceProviderFactory(new ServiceProviderOptions
         {

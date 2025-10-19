@@ -11,11 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{36D591
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedTypes", "Shared\SharedTypes\SharedTypes.csproj", "{1AEB4F60-B235-9871-9497-A3E1720E3298}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C1507CBB-AFE3-4D17-B5BC-72F83D554C05}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsService", "StatisticsService\StatisticsService.csproj", "{B84EF45F-C2F4-4091-84CF-4466248B03DA}"
 EndProject
 Global
