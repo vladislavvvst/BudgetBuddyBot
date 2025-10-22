@@ -3,13 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SharedTypes;
-using SpendingTrackerService.Consumers;
-using SpendingTrackerService.Database;
-using SpendingTrackerService.Database.Repository;
+using SpendingTrackerService.Api.Consumers;
+using SpendingTrackerService.Infrastructure.Persistence;
+using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService;
 
-internal class Program
+internal static class Program
 {
     public static async Task Main(string[] args)
     {

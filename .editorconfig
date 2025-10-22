@@ -1,0 +1,223 @@
+root = true
+
+# ===========================================
+#  Файлы C#
+#  Общие правила редактора + соглашения .NET
+#  Этот .editorconfig читается Rider/VS/MSBuild
+# ===========================================
+[*.cs]
+
+#### БАЗОВЫЕ НАСТРОЙКИ РЕДАКТОРА ####
+indent_size = 4                                   # Размер отступа — 4 пробела
+indent_style = space                              # Отступы пробелами (не табами)
+tab_width = 4                                     # Ширина таба (если встретится)
+end_of_line = crlf                                # Концы строк Windows (CRLF)
+insert_final_newline = true                       # Гарантировать пустую строку в конце файла
+
+#### .NET CODING CONVENTIONS (стили кода .NET) ####
+dotnet_separate_import_directive_groups = false   # Не разбивать using на группы пустой строкой
+dotnet_sort_system_directives_first = true        # Директивы System — первыми
+
+dotnet_style_qualification_for_event = false:error    # Не требовать this. для событий
+dotnet_style_qualification_for_field = false:error    # Не требовать this. для полей
+dotnet_style_qualification_for_method = false:error   # Не требовать this. для методов
+dotnet_style_qualification_for_property = false:error # Не требовать this. для свойств
+
+dotnet_style_predefined_type_for_locals_parameters_members = true:error # Использовать ключевые слова (int, string) в объявлениях
+dotnet_style_predefined_type_for_member_access = true:error             # И в обращениях к членам
+
+dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:error   # Лишние скобки в арифм. операциях — убирать
+dotnet_style_parentheses_in_other_binary_operators = never_if_unnecessary:error         # Лишние скобки в прочих бинарных — убирать
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:error                # Лишние скобки в унарных/прочих — убирать
+dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:error    # Лишние скобки в сравнениях — убирать
+
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error           # Всегда указывать модификаторы доступа (кроме интерфейсов)
+
+dotnet_style_coalesce_expression = true:error                   # Предпочитать ?? и ??=
+dotnet_style_collection_initializer = true:error                # Предпочитать инициализаторы коллекций
+dotnet_style_explicit_tuple_names = true:error                  # Предпочитать явные имена кортежей
+dotnet_style_null_propagation = true:error                      # Предпочитать ?. и ?[]
+dotnet_style_object_initializer = true:error                    # Предпочитать инициализаторы объектов
+dotnet_style_prefer_auto_properties = true:warning              # Автосвойства вместо полей+геттеров
+dotnet_style_prefer_compound_assignment = true:error            # a = a + 1 → a += 1
+dotnet_style_prefer_conditional_expression_over_assignment = true:error # if/else присв. → ?: где уместно
+dotnet_style_prefer_conditional_expression_over_return = true:error    # if/else return → ?: где уместно
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:error  # Выводить имена членов анонимных типов
+dotnet_style_prefer_inferred_tuple_names = true:error                 # Выводить имена элементов кортежа
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:error # x is null вместо ReferenceEquals
+
+dotnet_style_readonly_field = true:error                    # Поля readonly, если возможно
+dotnet_code_quality_unused_parameters = all:error           # Невостребованные параметры — диагностировать
+
+#### C# CODING CONVENTIONS (специфика C#) ####
+csharp_style_namespace_declarations = file_scoped:error     # Пространства имён — файловые
+
+csharp_style_var_elsewhere = false                          # Явные типы вместо var (везде)
+csharp_style_var_for_built_in_types = false                 # Явные типы для встроенных (int, string)
+csharp_style_var_when_type_is_apparent = false              # Явные типы даже когда тип очевиден
+
+csharp_style_expression_bodied_accessors = true:error       # Тела-выражения для аксессоров
+csharp_style_expression_bodied_constructors = true:error    # …для конструкторов
+csharp_style_expression_bodied_indexers = true:error        # …для индексаторов
+csharp_style_expression_bodied_lambdas = true:error         # …для лямбд
+csharp_style_expression_bodied_local_functions = true:error # …для локальных функций
+csharp_style_expression_bodied_methods = true:error         # …для методов
+csharp_style_expression_bodied_operators = true:error       # …для операторов
+csharp_style_expression_bodied_properties = true:error      # …для свойств
+
+csharp_style_pattern_matching_over_as_with_null_check = true:error # pattern matching вместо as+null check
+csharp_style_pattern_matching_over_is_with_cast_check = true:error # pattern matching вместо is+каст
+csharp_style_prefer_switch_expression = true:error                # Предпочитать switch-expression
+
+csharp_style_conditional_delegate_call = true:error         # Безопасный вызов делегатов ?.Invoke
+
+csharp_prefer_static_local_function = true:error            # Предпочитать static для локальных функций
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async # Порядок модификаторов
+
+csharp_prefer_braces = true:none                            # Всегда использовать фигурные скобки
+csharp_prefer_simple_using_statement = true:error           # Предпочитать using-statement (C# 8+) вместо using-block, где уместно
+
+csharp_prefer_simple_default_expression = true:error        # default(T) → default
+csharp_style_deconstructed_variable_declaration = true:suggestion   # Предпочитать деконструкцию
+csharp_style_inlined_variable_declaration = true:error             # Встраивать объявление var в out-параметры
+csharp_style_pattern_local_over_anonymous_function = true:error     # Локальные функции вместо анонимных, где уместно
+csharp_style_prefer_index_operator = true:suggestion               # Предпочитать ^ и индексацию с конца
+csharp_style_prefer_range_operator = true:suggestion               # Предпочитать диапазоны ..
+csharp_style_throw_expression = true:suggestion                    # throw как выражение (?:/null-coalescing)
+csharp_style_unused_value_assignment_preference = discard_variable:silent # Неисп. присваивание → в _
+csharp_style_unused_value_expression_statement_preference = discard_variable:silent # Неисп. выражения → в _
+
+csharp_using_directive_placement = outside_namespace:error  # using вне namespace
+
+#### ПРАВИЛА ФОРМАТИРОВАНИЯ C# ####
+csharp_new_line_before_catch = true                         # Перенос перед catch
+csharp_new_line_before_else = true                          # Перенос перед else
+csharp_new_line_before_finally = true                       # Перенос перед finally
+csharp_new_line_before_members_in_anonymous_types = false   # Без переносов между членами анонимных типов
+csharp_new_line_before_members_in_object_initializers = false # Без переносов между членами инициализатора объекта
+csharp_new_line_before_open_brace = all                     # Перенос перед открывающей скобкой
+csharp_new_line_between_query_expression_clauses = true     # Переносы между частями LINQ-запроса
+
+csharp_indent_block_contents = true                         # Отступ внутри блоков
+csharp_indent_braces = false                                # Не смещать сами скобки
+csharp_indent_case_contents = true                          # Отступ внутри case
+csharp_indent_case_contents_when_block = true               # Отступ внутри case-блоков
+csharp_indent_labels = one_less_than_current                # Метки левее на один уровень
+csharp_indent_switch_labels = true                          # Отступ меток switch
+
+csharp_space_after_cast = false                             # Без пробела после приведения (type)x
+csharp_space_after_colon_in_inheritance_clause = true       # Пробел после : в наследовании
+csharp_space_after_comma = true                             # Пробел после запятой
+csharp_space_after_dot = false                              # Без пробела после точки
+csharp_space_after_keywords_in_control_flow_statements = true # Пробел после ключевых слов if/for…
+csharp_space_after_semicolon_in_for_statement = true        # Пробел после ; в for
+csharp_space_around_binary_operators = before_and_after     # Пробелы вокруг бинарных операторов
+csharp_space_around_declaration_statements = false          # Без лишних пробелов в объявлениях
+csharp_space_before_colon_in_inheritance_clause = true      # Пробел перед : в наследовании
+csharp_space_before_comma = false                           # Без пробела перед запятой
+csharp_space_before_dot = false                             # Без пробела перед точкой
+csharp_space_before_open_square_brackets = false            # Без пробела перед [
+csharp_space_before_semicolon_in_for_statement = false      # Без пробела перед ; в for
+csharp_space_between_empty_square_brackets = false          # [] без пробелов
+csharp_space_between_method_call_empty_parameter_list_parentheses = false # Foo() без пробелов
+csharp_space_between_method_call_name_and_opening_parenthesis = false    # Foo(…): без пробела перед (
+csharp_space_between_method_call_parameter_list_parentheses = false      # (arg) без внутренних пробелов
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false # void Foo() — без пробелов
+csharp_space_between_method_declaration_name_and_open_parenthesis = false        # Имя и ( без пробела
+csharp_space_between_method_declaration_parameter_list_parentheses = false        # В объявлениях — без внутренних пробелов
+csharp_space_between_parentheses = false                       # ( … ) без внутренних пробелов
+csharp_space_between_square_brackets = false                   # [ … ] без внутренних пробелов
+
+csharp_preserve_single_line_blocks = true                   # Сохранять однострочные блоки
+csharp_preserve_single_line_statements = false              # Но одиночные операторы разворачивать по стилю
+
+#### ПРАВИЛА ИМЕНОВАНИЯ ####
+dotnet_naming_rule.interface_should_be_begins_with_i.severity = suggestion # Интерфейсы должны начинаться с I
+dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface   # Применять к интерфейсам
+dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i # Стиль — префикс I
+
+dotnet_naming_rule.types_should_be_pascal_case.severity = suggestion       # Типы в PascalCase
+dotnet_naming_rule.types_should_be_pascal_case.symbols = types             # Применять к классам/структурам/интерф./enum
+dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case         # Стиль — PascalCase
+
+dotnet_naming_rule.non_field_members_should_be_pascal_case.severity = suggestion # Члены (кроме полей) в PascalCase
+dotnet_naming_rule.non_field_members_should_be_pascal_case.symbols = non_field_members # Применять к св-вам/событиям/методам
+dotnet_naming_rule.non_field_members_should_be_pascal_case.style = pascal_case        # Стиль — PascalCase
+
+dotnet_naming_symbols.interface.applicable_kinds = interface                  # Набор — интерфейсы
+dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected # Все доступы
+dotnet_naming_symbols.interface.required_modifiers =                          # Без обязат. модификаторов
+
+dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum # Набор — все типы
+dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected # Все доступы
+dotnet_naming_symbols.types.required_modifiers =                              # Без обязат. модификаторов
+
+dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method # Свойства/события/методы
+dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected # Все доступы
+dotnet_naming_symbols.non_field_members.required_modifiers =                  # Без обязат. модификаторов
+
+dotnet_naming_style.pascal_case.required_prefix =         # Без префикса
+dotnet_naming_style.pascal_case.required_suffix =         # Без суффикса
+dotnet_naming_style.pascal_case.word_separator =          # Без разделителя
+dotnet_naming_style.pascal_case.capitalization = pascal_case # PascalCase
+
+dotnet_naming_style.begins_with_i.required_prefix = I     # Префикс I
+dotnet_naming_style.begins_with_i.required_suffix =       # Без суффикса
+dotnet_naming_style.begins_with_i.word_separator =        # Без разделителя
+dotnet_naming_style.begins_with_i.capitalization = pascal_case # I + PascalCase
+
+#### СТОРОННИЕ/ДОП. АНАЛИЗАТОРЫ ####
+# StyleCop — отключенные правила (none = выключено)
+dotnet_diagnostic.SA0001.severity = none                  # Отключить SA0001 (XML-комменты отключены)
+dotnet_diagnostic.SA1101.severity = none                  # Отключить требование this. для членов
+dotnet_diagnostic.SA1309.severity = none                  # Отключить запрет _префикса у полей
+dotnet_diagnostic.SA1413.severity = none                  # Отключить завершающую запятую в многострочных иниц.
+dotnet_diagnostic.SA1600.severity = none                  # Отключить требование документации элементов
+dotnet_diagnostic.SA1633.severity = none                  # Отключить заголовок файла
+dotnet_diagnostic.SA1649.severity = none                  # Отключить соответствие имени файла имени типа
+
+# Sonar — отключенные правила
+dotnet_diagnostic.S1121.severity = none                   # Отключить «присваивание в подвыражениях»
+
+# Microsoft Code Quality (CA****) — отключенные правила
+dotnet_diagnostic.CA1000.severity = none                  # Стат. члены на generic-типах
+dotnet_diagnostic.CA1014.severity = none                  # CLSCompliantAttribute обязателен
+dotnet_diagnostic.CA1030.severity = none                  # Использовать события вместо методов-событий
+dotnet_diagnostic.CA1031.severity = none                  # Не ловить общий Exception
+dotnet_diagnostic.CA1040.severity = none                  # Пустые интерфейсы
+dotnet_diagnostic.CA1062.severity = none                  # Проверка аргументов на null
+dotnet_diagnostic.CA1711.severity = none                  # Неверные суффиксы в именах
+dotnet_diagnostic.CA1716.severity = none                  # Идентификаторы совпадают с ключевыми словами
+dotnet_diagnostic.CA1724.severity = none                  # Имена типов совпадают с пространствами имён
+dotnet_diagnostic.CA1812.severity = none                  # Внутренние классы без экземпляров
+dotnet_diagnostic.CA1819.severity = none                  # Свойства не должны возвращать массивы
+dotnet_diagnostic.CA1848.severity = none                  # LoggerMessage вместо обычных лог-вызовов
+dotnet_diagnostic.CA2007.severity = none                  # Всегда вызывать ConfigureAwait
+dotnet_diagnostic.CA2225.severity = none                  # Операторы должны иметь именованные альтернативы
+dotnet_diagnostic.CA2326.severity = none                  # Json.NET TypeNameHandling ≠ None
+dotnet_diagnostic.CA2327.severity = none                  # Небезопасные JsonSerializerSettings
+
+# ===== Reliability / Resources =====
+dotnet_diagnostic.CA2213.severity = error                 # Должны Dispose поля-IDisposable (утечки по полям)
+dotnet_diagnostic.CA2000.severity = error                 # Локальные IDisposable должны Dispose до выхода из области (передача владения учитывается)  # см. CA2000 :contentReference[oaicite:1]{index=1}
+dotnet_diagnostic.CA2016.severity = error                 # Прокидывать CancellationToken во вложенные вызовы (корректная отмена)
+dotnet_diagnostic.CA1816.severity = warning               # В Dispose вызывать GC.SuppressFinalize при наличии финализатора
+dotnet_diagnostic.CA2208.severity = warning               # Корректно конструировать Argument*Exception (имя параметра/сообщение)
+dotnet_diagnostic.CA1068.severity = warning               # CancellationToken должен быть последним параметром
+dotnet_diagnostic.CA1001.severity = warning               # Типы с Disposable-полями должны реализовывать IDisposable
+
+# ===== Security =====
+dotnet_diagnostic.CA2100.severity = warning               # Потенц. SQL-инъекция при конкатенации — требовать параметризацию
+dotnet_diagnostic.CA5350.severity = warning               # Запрет устаревших/слабых алгоритмов шифрования/хеширования
+
+# ===== Performance =====
+dotnet_diagnostic.CA1852.severity = warning               # Запечатывать internal-типы, где возможно (мелкий perf-плюс)
+dotnet_diagnostic.CA1822.severity = suggestion            # Методы без состояния — сделать static
+dotnet_diagnostic.CA1845.severity = suggestion            # Предпочитать span-based string.Concat вместо Substring
+dotnet_diagnostic.CA1846.severity = suggestion            # Предпочитать AsSpan вместо Substring при сравн./поиске
+dotnet_diagnostic.CA1847.severity = suggestion            # string.Contains(char) вместо string.Contains(string) где уместно
+dotnet_diagnostic.CA1835.severity = suggestion            # Async API c Memory<T>/ReadOnlyMemory<T> для потоков
+# dotnet_analyzer_diagnostic.category-Performance.severity = suggestion   # (Опция) поднять всю категорию Performance
+
+# ===== Async correctness =====
+dotnet_diagnostic.CA2012.severity = warning               # Корректное использование ValueTask (без множественных await и пр.)

@@ -2,9 +2,9 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.Expenses;
 
@@ -19,7 +19,8 @@ internal sealed class ExpenseShowLastScene : IScene
 
         if (response.Items.Count is 0)
         {
-            await context.Bot.SendMessage(chatId, UiStrings.Info.NoExpenses, cancellationToken: ct);
+            await context.Bot.SendMessage(chatId, UiStrings.Info.NoExpenses,
+                parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
             return;
         }
 
@@ -61,8 +62,6 @@ internal sealed class ExpenseShowLastScene : IScene
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
-    public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
-    {
+    public async Task OnBackAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
-    }
 }

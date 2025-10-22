@@ -4,7 +4,6 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgApiService.Application.Abstractions;
-using TgApiService.Application.Cache;
 using TgApiService.Configuration.Options;
 using TgApiService.Presentation.Telegram.Common;
 
@@ -15,7 +14,7 @@ namespace TgApiService.Presentation.Telegram.Services;
 /// Выполняет валидацию (допущенные пользователи, личный чат),
 /// оборачивает данные в UpdateContext и передает их в SceneRouter.
 /// </summary>
-internal class UpdateProcessor
+internal sealed class UpdateProcessor
 {
     private readonly ILogger<UpdateProcessor> _logger;
     private readonly IOptions<TelegramOptions> _tgOptions;

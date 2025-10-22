@@ -5,16 +5,16 @@ using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using TgApiService.Application.Abstractions;
-using TgApiService.Application.Cache;
 using TgApiService.Configuration.Options;
+using TgApiService.Infrastructure.Caching;
 using TgApiService.Infrastructure.Gateways;
+using TgApiService.Infrastructure.Messaging.Consumers;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Consumers;
 using TgApiService.Presentation.Telegram.Services;
 
 namespace TgApiService;
 
-internal class Program
+internal static class Program
 {
     public static async Task Main(string[] args)
     {

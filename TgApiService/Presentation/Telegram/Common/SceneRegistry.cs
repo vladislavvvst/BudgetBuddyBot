@@ -1,4 +1,4 @@
-﻿using TgApiService.Application.Cache;
+﻿using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Features.Categories;
 using TgApiService.Presentation.Telegram.Features.Expenses;
 using TgApiService.Presentation.Telegram.Features.MainMenu;
@@ -15,10 +15,7 @@ internal static class SceneRegistry
 {
     private static readonly Dictionary<UserState, IScene> ByState = [];
 
-    public static IScene GetScene(UserState state)
-    {
-        return Resolve(state);
-    }
+    public static IScene GetScene(UserState state) => Resolve(state);
 
     public static async Task NavigateBackAsync(UpdateContext context, UserState fallback, CancellationToken ct)
     {
@@ -37,15 +34,9 @@ internal static class SceneRegistry
         await Resolve(nextState).EnterAsync(context, ct);
     }
 
-    private static void Register(IScene scene)
-    {
-        ByState[scene.State] = scene;
-    }
+    private static void Register(IScene scene) => ByState[scene.State] = scene;
 
-    private static IScene Resolve(UserState state)
-    {
-        return ByState.TryGetValue(state, out IScene? scene) ? scene : ByState[UserState.MainMenu];
-    }
+    private static IScene Resolve(UserState state) => ByState.TryGetValue(state, out IScene? scene) ? scene : ByState[UserState.MainMenu];
 
     public static void Bootstrap()
     {

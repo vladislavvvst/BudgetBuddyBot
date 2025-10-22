@@ -1,18 +1,23 @@
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SharedTypes;
-using StatisticsService.Consumers;
+using StatisticsService.Api.Consumers;
+using StatisticsService.Infrastructure.Persistence;
 
 namespace StatisticsService;
 
-internal class Program
+internal static class Program
 {
     public static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
         builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
+
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ApplicationDbContext))));
 
         builder.Services.Configure<MessageBrokerOptions>(
             builder.Configuration.GetSection(MessageBrokerOptions.SectionName));
@@ -22,6 +27,7 @@ internal class Program
             busCfg.SetKebabCaseEndpointNameFormatter();
 
             busCfg.AddConsumer<StatsFullWeekConsumer>();
+            busCfg.AddConsumer<ExpenseAddedConsumer>();
 
             busCfg.UsingRabbitMq((context, cfg) =>
             {

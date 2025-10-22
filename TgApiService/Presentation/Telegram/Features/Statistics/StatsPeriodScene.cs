@@ -1,8 +1,8 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.Statistics;
 
@@ -67,8 +67,6 @@ internal sealed class StatsPeriodScene : IScene
         await SceneRegistry.NavigateForwardAsync(context, UserState.StatisticsMetric, ct);
     }
 
-    public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
-    {
+    public async Task OnBackAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
-    }
 }

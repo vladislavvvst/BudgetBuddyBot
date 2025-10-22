@@ -4,9 +4,9 @@ using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.Expenses;
 
@@ -94,7 +94,7 @@ internal sealed class ExpenseAmountCommentScene : IScene
             await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorTimeout, cancellationToken: ct);
         }
 
-        await SceneRegistry.NavigateForwardAsync(context, UserState.MainMenu, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.ExpensePickCategory, ct);
     }
 
     public async Task OnCallbackAsync(UpdateContext context, CancellationToken ct)
@@ -114,10 +114,8 @@ internal sealed class ExpenseAmountCommentScene : IScene
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
-    public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
-    {
+    public async Task OnBackAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
-    }
 
     /// <summary>
     /// Парсит строку в формате: "сумма комментарий".

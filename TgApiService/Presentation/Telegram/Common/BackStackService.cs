@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 
 namespace TgApiService.Presentation.Telegram.Common;
 
@@ -25,8 +25,5 @@ internal static class BackStackService
         return null;
     }
 
-    public static void Clear(long chatId)
-    {
-        Stacks.TryRemove(chatId, out Stack<UserState>? _);
-    }
+    public static void Clear(long chatId) => Stacks.TryRemove(chatId, out Stack<UserState>? _);
 }

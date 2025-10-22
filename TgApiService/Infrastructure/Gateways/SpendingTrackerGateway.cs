@@ -8,7 +8,7 @@ namespace TgApiService.Infrastructure.Gateways;
 /// Реализация шлюза через MassTransit-шину.
 /// Для каждого типа запроса создает IRequestClient и ждет ответа.
 /// </summary>
-internal class SpendingTrackerGateway : ISpendingTrackerGateway
+internal sealed class SpendingTrackerGateway : ISpendingTrackerGateway
 {
     private readonly IClientFactory _clients;
 

@@ -1,8 +1,8 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.MainMenu;
 
@@ -71,8 +71,5 @@ internal sealed class MainMenuScene : IScene
         await context.Bot.SendMessage(chatId, UiStrings.Errors.UnknownCmd, cancellationToken: ct);
     }
 
-    public Task OnBackAsync(UpdateContext context, CancellationToken ct)
-    {
-        return EnterAsync(context, ct);
-    }
+    public Task OnBackAsync(UpdateContext context, CancellationToken ct) => EnterAsync(context, ct);
 }

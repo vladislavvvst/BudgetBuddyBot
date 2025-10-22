@@ -1,4 +1,4 @@
-﻿using TgApiService.Application.Cache;
+﻿using TgApiService.Application.Abstractions;
 
 namespace TgApiService.Presentation.Telegram.Common;
 

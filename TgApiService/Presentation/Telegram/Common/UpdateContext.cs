@@ -1,7 +1,6 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgApiService.Application.Abstractions;
-using TgApiService.Application.Cache;
 
 namespace TgApiService.Presentation.Telegram.Common;
 

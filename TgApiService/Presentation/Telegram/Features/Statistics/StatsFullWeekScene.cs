@@ -1,15 +1,18 @@
 ﻿using MassTransit;
 using SharedTypes;
+using System.Globalization;
+using System.Net;
+using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.Statistics;
 
-internal class StatsFullWeekScene : IScene
+internal sealed class StatsFullWeekScene : IScene
 {
     public UserState State => UserState.StatsFullWeek;
 
@@ -68,29 +71,70 @@ internal class StatsFullWeekScene : IScene
         await context.Bot.SendMessage(chatId, UiStrings.Info.PushButton, cancellationToken: ct);
     }
 
-    public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
-    {
+    public async Task OnBackAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
-    }
 
     private static string FormatFullWeekStats(GetStatsFullWeekResponse stats)
     {
-        System.Globalization.CultureInfo ru = System.Globalization.CultureInfo.GetCultureInfo("ru-RU");
-        System.Text.StringBuilder sb = new();
+        CultureInfo ru = CultureInfo.GetCultureInfo("ru-RU");
+        StringBuilder sb = new();
 
-        sb.AppendLine("📊 <b>Полная статистика за 7 дней</b>");
-        sb.AppendLine();
-        sb.AppendLine($"💰 Всего расходов: <b>{stats.Total.ToString("N0", ru)} ₽</b>");
-        sb.AppendLine($"📉 Средний расход в день: <b>{stats.AvgPerDay.ToString("N0", ru)} ₽</b>");
-        sb.AppendLine($"🔥 Крупнейшая трата: <b>{stats.LargestExpense.ToString("N0", ru)} ₽</b>");
+        DateOnly startDay = DateOnly.FromDateTime(DateTime.Now);
+        DateOnly endDay = startDay.AddDays(-6);
+
+        // Заголовок с диапазоном
+        sb.AppendLine($"📊 <b>Неделя: {startDay:dd.MM}–{endDay:dd.MM}</b>");
         sb.AppendLine();
 
-        // Категории (топ-5)
-        sb.AppendLine("📂 <b>Топ категорий</b>");
-        if (stats.CategoriesAmount?.Any() == true)
+        // Итоги
+        SummaryDto s = stats.Summary;
+        sb.AppendLine($"💰 Всего: <b>{Money(s.Total, ru)}</b>");
+        sb.AppendLine($"📉 В день: <b>{Money(s.AvgPerDay, ru)}</b>");
+
+        // Крупнейшая трата
+        if (s.LargestExpense.Amount > 0m)
         {
-            foreach ((string name, decimal amount) in stats.CategoriesAmount)
-                sb.AppendLine($"• {EscapeHtml(name)} — <b>{amount.ToString("N0", ru)} ₽</b>");
+            string label = string.IsNullOrWhiteSpace(s.LargestExpense.Note)
+                ? string.Empty
+                : $" — {EscapeHtml(s.LargestExpense.Note)}";
+            string dayStr = s.LargestExpense.Day == default ? string.Empty : $" ({s.LargestExpense.Day:dd.MM})";
+            sb.AppendLine($"🔥 Крупнейшая трата: <b>{Money(s.LargestExpense.Amount, ru)}</b>{label}{dayStr}");
+        }
+
+        // Самый затратный день
+        if (s.HighestSpendingDay.Amount > 0m && s.HighestSpendingDay.Day != default)
+        {
+            sb.AppendLine($"🔥 Самый затратный день: {s.HighestSpendingDay.Day:dd.MM} — <b>{Money(s.HighestSpendingDay.Amount, ru)}</b>");
+        }
+
+        sb.AppendLine();
+
+        // Категории (топ)
+        sb.AppendLine("📂 <b>Топ категорий</b>");
+        if (stats.CategoriesTop5 is { Count: > 0 })
+        {
+            decimal shownTotal = 0m;
+            foreach (CategoryShareDto item in stats.CategoriesTop5)
+            {
+                string name = EscapeHtml(item.Name);
+                shownTotal += item.Amount;
+                string percent = item.SharePercent > 0m ? $" ({Percent(item.SharePercent, ru)})" : string.Empty;
+                sb.AppendLine($"• {name} — <b>{Money(item.Amount, ru)}</b>{percent}");
+            }
+
+            // Крупнейшая категория (из summary, если есть)
+            if (!string.IsNullOrWhiteSpace(s.LargestCategory.Name) && s.LargestCategory.Amount > 0m)
+            {
+                string extra = s.LargestCategory.SharePercent > 0m ? $" ({Percent(s.LargestCategory.SharePercent, ru)})" : string.Empty;
+                sb.AppendLine($"🔥 Крупнейшая категория: {EscapeHtml(s.LargestCategory.Name)} — {Money(s.LargestCategory.Amount, ru)}{extra}");
+            }
+
+            // Остаток (если не всё показали)
+            decimal leftover = Math.Max(0m, s.Total - shownTotal);
+            if (leftover > 0m)
+            {
+                sb.AppendLine($"• Прочее — <b>{Money(leftover, ru)}</b>");
+            }
         }
         else
         {
@@ -99,21 +143,13 @@ internal class StatsFullWeekScene : IScene
 
         sb.AppendLine();
 
-        // По дням
+        // Динамика по дням (7 строк, хронологически)
         sb.AppendLine("📈 <b>Динамика по дням</b>");
-        if (stats.DaysAmount?.Any() == true)
+        if (stats.Days is { Count: > 0 })
         {
-            var ordered = stats.DaysAmount.OrderBy(d => d.Date).ToList();
-            foreach ((DateTimeOffset date, decimal amount) in ordered)
+            foreach (DayAmountDto d in stats.Days.OrderBy(d => d.Day))
             {
-                sb.AppendLine($"• {date.ToLocalTime():dd.MM} — <b>{amount.ToString("N0", ru)} ₽</b>");
-            }
-
-            var max = ordered.MaxBy(d => d.Amount);
-            if (max.Amount > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine($"🔥 Самый затратный день: <b>{max.Date.ToLocalTime():dd.MM}</b> — <b>{max.Amount.ToString("N0", ru)} ₽</b>");
+                sb.AppendLine($"• {d.Day:dd.MM} — <b>{Money(d.Amount, ru)}</b>");
             }
         }
         else
@@ -124,14 +160,14 @@ internal class StatsFullWeekScene : IScene
         return sb.ToString();
     }
 
-    private static string EscapeHtml(string? s)
+    private static string Money(decimal amount, CultureInfo ru)
     {
-        if (string.IsNullOrEmpty(s))
-            return string.Empty;
-
-        return s
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;");
+        // "12 450" → заменяем пробелы на неразрывные и добавляем неразрывный перед ₽
+        string s = amount.ToString("N0", ru).Replace(' ', '\u00A0');
+        return $"{s}\u00A0₽";
     }
+
+    private static string Percent(decimal percent, CultureInfo ru) => percent.ToString("0.#", ru) + "%";
+
+    private static string EscapeHtml(string value) => WebUtility.HtmlEncode(value ?? string.Empty);
 }

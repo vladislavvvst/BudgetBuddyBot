@@ -9,9 +9,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.4" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
-        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="MassTransit.EntityFrameworkCore" />
+        <PackageReference Include="MassTransit.RabbitMQ" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="Serilog.AspNetCore" />
     </ItemGroup>
 
     <ItemGroup>

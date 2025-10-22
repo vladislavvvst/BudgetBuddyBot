@@ -2,7 +2,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Services;
 
@@ -10,7 +10,7 @@ namespace TgApiService.Presentation.Telegram.Services;
 /// Hosted-сервис, который запускает polling Telegram-бота в фоновом потоке.
 /// Регистрируется в DI как IHostedService, стартует при запуске приложения.
 /// </summary>
-internal class BotHostedService : BackgroundService
+internal sealed class BotHostedService : BackgroundService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<BotHostedService> _logger;

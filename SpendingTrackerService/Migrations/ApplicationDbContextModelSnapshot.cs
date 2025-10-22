@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SpendingTrackerService.Database;
+using SpendingTrackerService.Infrastructure.Persistence;
 
 #nullable disable
 
@@ -20,6 +20,7 @@ namespace SpendingTrackerService.Migrations
                 .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -200,8 +201,8 @@ namespace SpendingTrackerService.Migrations
 
                     b.Property<DateTimeOffset>("AddedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("timezone('utc', now())");
+                        .HasColumnType("timestamptz")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -212,7 +213,7 @@ namespace SpendingTrackerService.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("citext");
 
                     b.Property<string>("RequestId")
                         .HasMaxLength(128)
@@ -240,7 +241,7 @@ namespace SpendingTrackerService.Migrations
 
                     b.ToTable("categories", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Category_NotSystemDeleted", "NOT (\"IsSystem\" AND \"IsDeleted\")");
+                            t.HasCheckConstraint("CK_categories_not_system_deleted", "NOT (\"IsSystem\" AND \"IsDeleted\")");
                         });
                 });
 
@@ -254,8 +255,8 @@ namespace SpendingTrackerService.Migrations
 
                     b.Property<DateTimeOffset>("AddedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("timezone('utc', now())");
+                        .HasColumnType("timestamptz")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric(19,2)");
@@ -279,14 +280,20 @@ namespace SpendingTrackerService.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "AddedAtUtc");
+                    b.HasIndex("UserId", "AddedAtUtc")
+                        .IsDescending()
+                        .HasDatabaseName("IX_expenses_user_added_desc");
 
-                    b.HasIndex("UserId", "CategoryId");
+                    b.HasIndex("UserId", "CategoryId")
+                        .HasDatabaseName("IX_expenses_user_cat");
 
                     b.HasIndex("UserId", "RequestId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UX_expenses_user_request");
 
-                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc");
+                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc")
+                        .IsDescending()
+                        .HasDatabaseName("IX_expenses_user_cat_added_desc");
 
                     b.ToTable("expenses", (string)null);
                 });

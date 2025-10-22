@@ -3,9 +3,9 @@ using SharedTypes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgApiService.Application.Cache;
+using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.Categories;
 
@@ -79,14 +79,9 @@ internal sealed class CategoryDeleteScene : IScene
             DeleteCategoryResponse response = await context.Tracker.DeleteCategoryAsync(request, ct);
 
             if (response.Success)
-            {
-                await context.StateCache.SetCategoriesAsync(chatId, []);
                 await context.Bot.SendMessage(chatId, UiStrings.CategoryDeleted(categoryName), parseMode: ParseMode.Html, cancellationToken: ct);
-            }
             else
-            {
                 await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorDeletingCategory, cancellationToken: ct);
-            }
         }
         catch (RequestFaultException ex)
         {
@@ -99,11 +94,9 @@ internal sealed class CategoryDeleteScene : IScene
             await context.Bot.SendMessage(chatId, UiStrings.Errors.ErrorTimeout, cancellationToken: ct);
         }
 
-        await SceneRegistry.NavigateForwardAsync(context, UserState.CategoryMenu, ct);
+        await SceneRegistry.NavigateBackAsync(context, UserState.CategoryMenu, ct);
     }
 
-    public async Task OnBackAsync(UpdateContext context, CancellationToken ct)
-    {
+    public async Task OnBackAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateBackAsync(context, UserState.MainMenu, ct);
-    }
 }

@@ -1,26 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-TgApiService-cd1b5c5a-bf8e-4e3e-a88d-e3a6552a85bc</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-TgApiService-cd1b5c5a-bf8e-4e3e-a88d-e3a6552a85bc</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.4" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.7" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Telegram.Bot" Version="22.6.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Shared\SharedTypes\SharedTypes.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MassTransit.RabbitMQ" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="Serilog.AspNetCore" />
+        <PackageReference Include="Telegram.Bot" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\Shared\SharedTypes\SharedTypes.csproj" />
+    </ItemGroup>
 
 </Project>

@@ -1,8 +1,8 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgApiService.Application.Cache;
-using TgApiService.Presentation.Telegram.Features.UI;
+using TgApiService.Application.Abstractions;
+using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Common;
 
@@ -57,10 +57,8 @@ internal static class SceneRouter
         }
     }
 
-    private static async Task GoMainMenuAsync(UpdateContext context, CancellationToken ct)
-    {
+    private static async Task GoMainMenuAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateForwardAsync(context, UserState.MainMenu, ct);
-    }
 
     private static async Task ShowAboutAsync(UpdateContext context, CancellationToken ct)
     {
@@ -68,8 +66,6 @@ internal static class SceneRouter
         await context.Bot.SendMessage(chatId, UiStrings.Prompts.AboutBot, parseMode: ParseMode.Html, cancellationToken: ct);
     }
 
-    private static async Task GlobalCancelAsync(UpdateContext context, CancellationToken ct)
-    {
+    private static async Task GlobalCancelAsync(UpdateContext context, CancellationToken ct) =>
         await SceneRegistry.NavigateForwardAsync(context, UserState.MainMenu, ct);
-    }
 }
