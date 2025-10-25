@@ -160,17 +160,19 @@ internal static class UiStrings
         $"🗑️ Категория <b>{HtmlText(name)}</b> успешно удалена!";
 
     public static string ExpenseAdded(decimal amount, string category, string? comment) =>
-        $"💰 Трата <b>{amount.ToString("0.##", CultureInfo.InvariantCulture)}₽</b> " +
+        $"💰 Трата <b>{Rub(amount)}</b> " +
         $"добавлена в категорию <b>{HtmlText(category)}</b> " +
         (string.IsNullOrWhiteSpace(comment)
             ? string.Empty
             : $"\n📝 Комментарий: {HtmlText(comment!)}");
 
     public static string ExpenseLine(DateTimeOffset addDate, string category, decimal amount, string? comment) =>
-        $"📅 {addDate:dd.MM.yyyy}\n🗂️{HtmlText(category)}\n💰 <b>{amount.ToString("N2", CultureInfo.InvariantCulture)}₽</b>" +
+        $"📅 {addDate:dd.MM.yyyy}\n🗂️{HtmlText(category)}\n💰 <b>{Rub(amount)}</b>" +
         (string.IsNullOrWhiteSpace(comment)
             ? string.Empty
             : $"\n📝 {HtmlText(comment!)}");
+
+    private static string Rub(decimal value) => value.ToString("N2", CultureInfo.CurrentCulture) + " ₽";
 
     // ==============
     // HTML helpers для Telegram

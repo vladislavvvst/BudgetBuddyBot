@@ -1,4 +1,4 @@
-﻿using SharedTypes;
+﻿using SharedTypes.Contracts;
 
 namespace SpendingTrackerService.Infrastructure.Repositories;
 

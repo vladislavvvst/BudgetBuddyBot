@@ -1,4 +1,4 @@
-﻿using SharedTypes;
+﻿using SharedTypes.Contracts;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -17,7 +17,7 @@ internal sealed class ExpenseShowLastScene : IScene
         long chatId = Utils.ChatId(context);
         GetExpensesResponse response = await context.Tracker.GetExpensesAsync(new(chatId, 1, 10), ct);
 
-        if (response.Items.Count is 0)
+        if (response.Expenses.Count is 0)
         {
             await context.Bot.SendMessage(chatId, UiStrings.Info.NoExpenses,
                 parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
@@ -27,7 +27,7 @@ internal sealed class ExpenseShowLastScene : IScene
         IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
         Dictionary<long, string> byId = categories.ToDictionary(x => x.Id, x => x.Name);
 
-        IEnumerable<string> lines = response.Items.Select(i =>
+        IEnumerable<string> lines = response.Expenses.Select(i =>
         {
             string categoryName = byId.TryGetValue(i.CategoryId, out string? name)
                 ? name

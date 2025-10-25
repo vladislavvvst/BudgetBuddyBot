@@ -1,4 +1,4 @@
-﻿using SharedTypes;
+﻿using SharedTypes.Contracts;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TgApiService.Presentation.Telegram.UI;

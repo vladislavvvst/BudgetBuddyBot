@@ -1,4 +1,4 @@
-﻿using SharedTypes;
+﻿using SharedTypes.Contracts;
 
 namespace TgApiService.Application.Abstractions;
 
@@ -18,4 +18,5 @@ internal interface ISpendingTrackerGateway
 
     // Статистика
     Task<GetStatsFullWeekResponse> GetStatsFullWeekAsync(GetStatsFullWeekRequest request, CancellationToken ct);
+    Task<GetStatsAmountResponse> GetStatsAmountAsync(GetStatsAmountRequest request, CancellationToken ct);
 }

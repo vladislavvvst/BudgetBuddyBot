@@ -1,7 +1,7 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using SharedTypes;
+using SharedTypes.Contracts;
 using StatisticsService.Infrastructure.Persistence;
 using StatisticsService.Infrastructure.Persistence.Entities;
 

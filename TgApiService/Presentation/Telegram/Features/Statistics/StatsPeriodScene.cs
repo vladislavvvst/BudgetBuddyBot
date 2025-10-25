@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using SharedTypes.Contracts;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgApiService.Application.Abstractions;
 using TgApiService.Presentation.Telegram.Common;
@@ -50,19 +51,20 @@ internal sealed class StatsPeriodScene : IScene
 
         if (string.Equals(data, UiStrings.CallbackData.StatsRange, StringComparison.Ordinal))
         {
-            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.StatsRange);
+            // todo: важно проверить при установке Custom что промежуток задан корректно
+            await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Custom);
             await context.Bot.SendMessage(chatId, "Календаря пока нету :(", cancellationToken: ct);
             return;
         }
 
         if (string.Equals(data, UiStrings.CallbackData.StatsToday, StringComparison.Ordinal))
-            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.StatsToday);
+            await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Day);
 
         if (string.Equals(data, UiStrings.CallbackData.Stats7Days, StringComparison.Ordinal))
-            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.Stats7Days);
+            await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Week);
 
         if (string.Equals(data, UiStrings.CallbackData.StatsMonth, StringComparison.Ordinal))
-            await context.StateCache.SetStatsPeriod(chatId, UiStrings.CallbackData.StatsMonth);
+            await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Month);
 
         await SceneRegistry.NavigateForwardAsync(context, UserState.StatisticsMetric, ct);
     }

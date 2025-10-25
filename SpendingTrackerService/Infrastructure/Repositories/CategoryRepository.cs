@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using SharedTypes;
 using SpendingTrackerService.Infrastructure.Defaults;
 using SpendingTrackerService.Infrastructure.Persistence;
 using SpendingTrackerService.Infrastructure.Persistence.Entities;
 using System.Text.RegularExpressions;
+using SharedTypes.Contracts;
 
 namespace SpendingTrackerService.Infrastructure.Repositories;
 

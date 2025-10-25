@@ -1,4 +1,4 @@
-﻿using SharedTypes;
+﻿using SharedTypes.Contracts;
 
 namespace TgApiService.Application.Abstractions;
 
@@ -25,6 +25,9 @@ internal enum UserState
     StatisticsPeriod = 30,              // Ожидание выбора периода
     StatisticsMetric = 31,              // Ожидание выбора типа статистики (метрики)
     StatsFullWeek = 32,                 // Показать статистику за неделю
+    StatsMetricTotalAmount = 33,        // Показать статистику общая сумма за период
+    StatsMetricByCategory = 34,         // Показать статистику по категориям за период
+    StatsMetricDynByDay = 35,           // Показать статистику динамика по дням за период
 }
 
 /// <summary>
@@ -42,8 +45,8 @@ internal interface IStateCache
     Task RemoveCategoryIdAsync(long chatId);
 
     // Временно выбранный период для статистики
-    Task<string?> GetStatsPeriod(long chatId);
-    Task SetStatsPeriod(long chatId, string period);
+    Task<PeriodsOfTime> GetStatsPeriod(long chatId);
+    Task SetStatsPeriod(long chatId, PeriodsOfTime period);
     Task RemoveStatsPeriod(long chatId);
 
     // Кэш списка категорий пользователя, чтобы не ходить за ними в сервис каждый раз

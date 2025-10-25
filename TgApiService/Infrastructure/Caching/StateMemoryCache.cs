@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
-using SharedTypes;
+using SharedTypes.Contracts;
 using TgApiService.Application.Abstractions;
 
 namespace TgApiService.Infrastructure.Caching;
@@ -70,14 +70,14 @@ internal sealed class StateMemoryCache : IStateCache
     }
 
     // Временно выбранный период для статистики
-    public Task<string?> GetStatsPeriod(long chatId)
+    public Task<PeriodsOfTime> GetStatsPeriod(long chatId)
     {
         string cacheKey = BuildStatsPeriodKey(chatId);
-        _cache.TryGetValue(cacheKey, out string? period);
-        return Task.FromResult(period);
+        _cache.TryGetValue(cacheKey, out PeriodsOfTime? period);
+        return Task.FromResult(period ?? PeriodsOfTime.None);
     }
 
-    public Task SetStatsPeriod(long chatId, string period)
+    public Task SetStatsPeriod(long chatId, PeriodsOfTime period)
     {
         string cacheKey = BuildStatsPeriodKey(chatId);
         _cache.Set(cacheKey, period);

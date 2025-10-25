@@ -1,7 +1,9 @@
-﻿using MassTransit;
+﻿using System.Globalization;
+using MassTransit;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SharedTypes;
+using SharedTypes.Contracts;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using TgApiService.Application.Abstractions;
@@ -19,6 +21,12 @@ internal static class Program
     public static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+
+        string culture = builder.Configuration[CultureOptions.SectionName] ?? "ru-RU";
+        CultureInfo cultureInfo = new(culture);
+
+        CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+        CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
         builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
 
@@ -54,6 +62,7 @@ internal static class Program
             busCfg.AddRequestClient<GetCategoriesRequest>(requestTimeout);
             busCfg.AddRequestClient<DeleteCategoryRequest>(requestTimeout);
             busCfg.AddRequestClient<GetStatsFullWeekRequest>(requestTimeout);
+            busCfg.AddRequestClient<GetStatsAmountRequest>(requestTimeout);
 
             // Подписчики
             busCfg.AddConsumer<UserCategoriesChangedConsumer>();

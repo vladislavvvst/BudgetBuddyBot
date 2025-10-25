@@ -1,5 +1,5 @@
-﻿using SharedTypes;
-using System.Globalization;
+﻿using System.Globalization;
+using SharedTypes.Contracts;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgApiService.Application.Abstractions;
@@ -61,7 +61,7 @@ internal sealed class ExpensePickCategoryScene : IScene
         }
 
         string idStr = data.Substring(UiStrings.CallbackData.ExpPickPrefix.Length);
-        if (!long.TryParse(idStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out long categoryId))
+        if (!long.TryParse(idStr, NumberStyles.Integer, CultureInfo.CurrentCulture, out long categoryId))
         {
             await context.Bot.SendMessage(chatId, UiStrings.Errors.UnknownCmd, cancellationToken: ct);
             return;

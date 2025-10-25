@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using SharedTypes;
+using SharedTypes.Contracts;
 using SpendingTrackerService.Infrastructure.Persistence;
 using SpendingTrackerService.Infrastructure.Persistence.Entities;
 

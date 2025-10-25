@@ -28,6 +28,7 @@ internal static class Program
 
             busCfg.AddConsumer<StatsFullWeekConsumer>();
             busCfg.AddConsumer<ExpenseAddedConsumer>();
+            busCfg.AddConsumer<StatsMetricTotalAmountConsumer>();
 
             busCfg.UsingRabbitMq((context, cfg) =>
             {

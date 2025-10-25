@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using SharedTypes;
+using SharedTypes.Contracts;
 using TgApiService.Application.Abstractions;
 
 namespace TgApiService.Infrastructure.Gateways;
@@ -53,6 +53,13 @@ internal sealed class SpendingTrackerGateway : ISpendingTrackerGateway
     {
         IRequestClient<GetStatsFullWeekRequest> client = _clients.CreateRequestClient<GetStatsFullWeekRequest>();
         Response<GetStatsFullWeekResponse> response = await client.GetResponse<GetStatsFullWeekResponse>(request, ct);
+        return response.Message;
+    }
+
+    public async Task<GetStatsAmountResponse> GetStatsAmountAsync(GetStatsAmountRequest request, CancellationToken ct)
+    {
+        IRequestClient<GetStatsAmountRequest> client = _clients.CreateRequestClient<GetStatsAmountRequest>();
+        Response<GetStatsAmountResponse> response = await client.GetResponse<GetStatsAmountResponse>(request, ct);
         return response.Message;
     }
 }

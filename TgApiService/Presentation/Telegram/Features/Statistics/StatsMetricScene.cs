@@ -43,7 +43,25 @@ internal sealed class StatsMetricScene : IScene
             return;
         }
 
-        // Отправить RPC сервису статистики ...
+        if (string.Equals(data, UiStrings.CallbackData.StatsMetricTotalAmount, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.StatsMetricTotalAmount, ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.StatsMetricByCategory, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.StatsMetricByCategory, ct);
+            return;
+        }
+
+        if (string.Equals(data, UiStrings.CallbackData.StatsMetricDynByDay, StringComparison.Ordinal))
+        {
+            await SceneRegistry.NavigateForwardAsync(context, UserState.StatsMetricDynByDay, ct);
+            return;
+        }
+
+        await context.Bot.SendMessage(chatId, UiStrings.Errors.UnknownCmd, cancellationToken: ct);
     }
 
     public async Task OnBackAsync(UpdateContext context, CancellationToken ct) =>

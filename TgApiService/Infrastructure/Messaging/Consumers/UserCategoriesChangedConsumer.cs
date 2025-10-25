@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using SharedTypes;
+using SharedTypes.Contracts;
 using TgApiService.Application.Abstractions;
 
 namespace TgApiService.Infrastructure.Messaging.Consumers;
@@ -20,11 +20,11 @@ internal sealed class UserCategoriesChangedConsumer : IConsumer<UserCategoriesCh
     public async Task Consume(ConsumeContext<UserCategoriesChangedNotification> context)
     {
         UserCategoriesChangedNotification userCategories = context.Message;
-        await _stateCache.SetCategoriesAsync(userCategories.UserId, userCategories.Items);
+        await _stateCache.SetCategoriesAsync(userCategories.UserId, userCategories.Categories);
 
         _logger.LogInformation(
             "Updated categories cache for user {UserId}, categoriesCount={Count}",
             userCategories.UserId,
-            userCategories.Items.Count);
+            userCategories.Categories.Count);
     }
 }

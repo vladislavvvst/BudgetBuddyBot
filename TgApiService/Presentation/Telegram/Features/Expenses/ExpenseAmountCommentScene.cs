@@ -1,6 +1,6 @@
 ﻿using MassTransit;
-using SharedTypes;
 using System.Globalization;
+using SharedTypes.Contracts;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -152,7 +152,7 @@ internal sealed class ExpenseAmountCommentScene : IScene
         // Нормализуем десятичный разделитель
         numberPart = numberPart.Replace(',', '.');
 
-        if (!decimal.TryParse(numberPart, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
+        if (!decimal.TryParse(numberPart, NumberStyles.Number, CultureInfo.CurrentCulture, out decimal parsed))
             return false;
 
         amount = parsed;
@@ -172,6 +172,6 @@ internal sealed class ExpenseAmountCommentScene : IScene
                 return t.Name;
         }
 
-        return $"#{categoryId.ToString(CultureInfo.InvariantCulture)}";
+        return $"#{categoryId.ToString(CultureInfo.CurrentCulture)}";
     }
 }

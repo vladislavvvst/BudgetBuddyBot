@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using SharedTypes;
+using SharedTypes.Contracts;
 
 namespace TgApiService.Presentation.Telegram.Common;
 
@@ -24,12 +24,12 @@ internal static class Utils
         {
             GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new(chatId), ct);
 
-            context.Logger.LogInformation("Loaded {Count} categories for user {UserId} from SpendingTrackerService", response.Items.Count, chatId);
+            context.Logger.LogInformation("Loaded {Count} categories for user {UserId} from SpendingTrackerService", response.Categories.Count, chatId);
 
-            if (response.Items.Count > 0)
-                await context.StateCache.SetCategoriesAsync(chatId, response.Items);
+            if (response.Categories.Count > 0)
+                await context.StateCache.SetCategoriesAsync(chatId, response.Categories);
 
-            return response.Items;
+            return response.Categories;
         }
         catch (RequestTimeoutException)
         {

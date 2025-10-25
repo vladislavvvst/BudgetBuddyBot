@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using SharedTypes;
+using SharedTypes.Contracts;
 using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService.Api.Consumers;

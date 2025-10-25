@@ -1,8 +1,8 @@
 ﻿using MassTransit;
-using SharedTypes;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using SharedTypes.Contracts;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -26,15 +26,7 @@ internal sealed class StatsFullWeekScene : IScene
             GetStatsFullWeekResponse response = await context.Tracker.GetStatsFullWeekAsync(request, ct);
 
             string text = FormatFullWeekStats(response);
-
-            await context.Bot.SendMessage
-            (
-                chatId,
-                text,
-                parseMode: ParseMode.Html,
-                replyMarkup: UiKeyboards.BackOnlyKb,
-                cancellationToken: ct
-            );
+            await context.Bot.SendMessage(chatId, text, parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
         }
         catch (RequestFaultException ex)
         {
@@ -76,7 +68,6 @@ internal sealed class StatsFullWeekScene : IScene
 
     private static string FormatFullWeekStats(GetStatsFullWeekResponse stats)
     {
-        CultureInfo ru = CultureInfo.GetCultureInfo("ru-RU");
         StringBuilder sb = new();
 
         DateOnly startDay = DateOnly.FromDateTime(DateTime.Now);
@@ -88,23 +79,23 @@ internal sealed class StatsFullWeekScene : IScene
 
         // Итоги
         SummaryDto s = stats.Summary;
-        sb.AppendLine($"💰 Всего: <b>{Money(s.Total, ru)}</b>");
-        sb.AppendLine($"📉 В день: <b>{Money(s.AvgPerDay, ru)}</b>");
+        sb.AppendLine($"💰 Всего: <b>{Rub(s.Total)}</b>");
+        sb.AppendLine($"📉 В день: <b>{Rub(s.AvgPerDay)}</b>");
 
         // Крупнейшая трата
         if (s.LargestExpense.Amount > 0m)
         {
-            string label = string.IsNullOrWhiteSpace(s.LargestExpense.Note)
+            string label = string.IsNullOrWhiteSpace(s.LargestExpense.Comment)
                 ? string.Empty
-                : $" — {EscapeHtml(s.LargestExpense.Note)}";
+                : $" — {EscapeHtml(s.LargestExpense.Comment)}";
             string dayStr = s.LargestExpense.Day == default ? string.Empty : $" ({s.LargestExpense.Day:dd.MM})";
-            sb.AppendLine($"🔥 Крупнейшая трата: <b>{Money(s.LargestExpense.Amount, ru)}</b>{label}{dayStr}");
+            sb.AppendLine($"🔥 Крупнейшая трата: <b>{Rub(s.LargestExpense.Amount)}</b>{label}{dayStr}");
         }
 
         // Самый затратный день
         if (s.HighestSpendingDay.Amount > 0m && s.HighestSpendingDay.Day != default)
         {
-            sb.AppendLine($"🔥 Самый затратный день: {s.HighestSpendingDay.Day:dd.MM} — <b>{Money(s.HighestSpendingDay.Amount, ru)}</b>");
+            sb.AppendLine($"🔥 Самый затратный день: {s.HighestSpendingDay.Day:dd.MM} — <b>{Rub(s.HighestSpendingDay.Amount)}</b>");
         }
 
         sb.AppendLine();
@@ -118,22 +109,22 @@ internal sealed class StatsFullWeekScene : IScene
             {
                 string name = EscapeHtml(item.Name);
                 shownTotal += item.Amount;
-                string percent = item.SharePercent > 0m ? $" ({Percent(item.SharePercent, ru)})" : string.Empty;
-                sb.AppendLine($"• {name} — <b>{Money(item.Amount, ru)}</b>{percent}");
+                string percent = item.SharePercent > 0m ? $" ({Percent(item.SharePercent)})" : string.Empty;
+                sb.AppendLine($"• {name} — <b>{Rub(item.Amount)}</b>{percent}");
             }
 
             // Крупнейшая категория (из summary, если есть)
             if (!string.IsNullOrWhiteSpace(s.LargestCategory.Name) && s.LargestCategory.Amount > 0m)
             {
-                string extra = s.LargestCategory.SharePercent > 0m ? $" ({Percent(s.LargestCategory.SharePercent, ru)})" : string.Empty;
-                sb.AppendLine($"🔥 Крупнейшая категория: {EscapeHtml(s.LargestCategory.Name)} — {Money(s.LargestCategory.Amount, ru)}{extra}");
+                string extra = s.LargestCategory.SharePercent > 0m ? $" ({Percent(s.LargestCategory.SharePercent)})" : string.Empty;
+                sb.AppendLine($"🔥 Крупнейшая категория: {EscapeHtml(s.LargestCategory.Name)} — {Rub(s.LargestCategory.Amount)}{extra}");
             }
 
             // Остаток (если не всё показали)
             decimal leftover = Math.Max(0m, s.Total - shownTotal);
             if (leftover > 0m)
             {
-                sb.AppendLine($"• Прочее — <b>{Money(leftover, ru)}</b>");
+                sb.AppendLine($"• Прочее — <b>{Rub(leftover)}</b>");
             }
         }
         else
@@ -149,7 +140,7 @@ internal sealed class StatsFullWeekScene : IScene
         {
             foreach (DayAmountDto d in stats.Days.OrderBy(d => d.Day))
             {
-                sb.AppendLine($"• {d.Day:dd.MM} — <b>{Money(d.Amount, ru)}</b>");
+                sb.AppendLine($"• {d.Day:dd.MM} — <b>{Rub(d.Amount)}</b>");
             }
         }
         else
@@ -160,14 +151,7 @@ internal sealed class StatsFullWeekScene : IScene
         return sb.ToString();
     }
 
-    private static string Money(decimal amount, CultureInfo ru)
-    {
-        // "12 450" → заменяем пробелы на неразрывные и добавляем неразрывный перед ₽
-        string s = amount.ToString("N0", ru).Replace(' ', '\u00A0');
-        return $"{s}\u00A0₽";
-    }
-
-    private static string Percent(decimal percent, CultureInfo ru) => percent.ToString("0.#", ru) + "%";
-
+    private static string Rub(decimal value) => value.ToString("N2", CultureInfo.CurrentCulture) + " ₽";
+    private static string Percent(decimal percent) => percent.ToString("0.#", CultureInfo.CurrentCulture) + "%";
     private static string EscapeHtml(string value) => WebUtility.HtmlEncode(value ?? string.Empty);
 }

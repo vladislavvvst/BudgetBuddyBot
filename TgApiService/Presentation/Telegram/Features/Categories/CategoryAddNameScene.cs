@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using SharedTypes;
+using SharedTypes.Contracts;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
