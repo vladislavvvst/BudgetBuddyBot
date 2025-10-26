@@ -63,6 +63,7 @@ internal static class Program
             busCfg.AddRequestClient<DeleteCategoryRequest>(requestTimeout);
             busCfg.AddRequestClient<GetStatsFullWeekRequest>(requestTimeout);
             busCfg.AddRequestClient<GetStatsAmountRequest>(requestTimeout);
+            busCfg.AddRequestClient<GetStatsTopCategoryRequest>(requestTimeout);
 
             // Подписчики
             busCfg.AddConsumer<UserCategoriesChangedConsumer>();

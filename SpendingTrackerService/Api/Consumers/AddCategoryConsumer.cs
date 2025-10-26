@@ -7,10 +7,10 @@ namespace SpendingTrackerService.Api.Consumers;
 internal sealed class AddCategoryConsumer : IConsumer<AddCategoryRequest>
 {
     private readonly ILogger<AddCategoryConsumer> _logger;
-    private readonly ICategoryRepository _categories;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public AddCategoryConsumer(ILogger<AddCategoryConsumer> logger, ICategoryRepository categories)
-        => (_logger, _categories) = (logger, categories);
+    public AddCategoryConsumer(ILogger<AddCategoryConsumer> logger, ICategoryRepository categoryRepository)
+        => (_logger, _categoryRepository) = (logger, categoryRepository);
 
     public async Task Consume(ConsumeContext<AddCategoryRequest> context)
     {
@@ -25,7 +25,7 @@ internal sealed class AddCategoryConsumer : IConsumer<AddCategoryRequest>
 
         try
         {
-            AddCategoryResult result = await _categories.AddOrRestoreAsync(request.UserId, request.Name, request.RequestId, ct);
+            AddCategoryResult result = await _categoryRepository.AddOrRestoreAsync(request.UserId, request.Name, request.RequestId, ct);
             await context.RespondAsync(new AddCategoryResponse(result.Success));
 
             if (result.Success)
@@ -35,7 +35,7 @@ internal sealed class AddCategoryConsumer : IConsumer<AddCategoryRequest>
                     result.Restored ? "Restored" : "Added", request.Name, request.UserId, result.CategoryId,
                     context.CorrelationId, context.ConversationId);
 
-                IReadOnlyList<CategoryDto> items = await _categories.GetActiveForUserAsync(request.UserId, ct);
+                IReadOnlyList<Category> items = await _categoryRepository.GetActiveForUserAsync(request.UserId, ct);
                 await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
             }
         }

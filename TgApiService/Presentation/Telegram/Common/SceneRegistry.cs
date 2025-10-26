@@ -51,5 +51,7 @@ internal static class SceneRegistry
         Register(new StatsMetricScene());
         Register(new StatsFullWeekScene());
         Register(new StatsMetricTotalAmountScene());
+        Register(new StatsMetricByCategoryScene());
+        Register(new StatsMetricDynByDaysScene());
     }
 }

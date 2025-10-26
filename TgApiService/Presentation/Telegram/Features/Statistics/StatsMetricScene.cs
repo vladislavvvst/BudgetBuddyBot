@@ -55,9 +55,9 @@ internal sealed class StatsMetricScene : IScene
             return;
         }
 
-        if (string.Equals(data, UiStrings.CallbackData.StatsMetricDynByDay, StringComparison.Ordinal))
+        if (string.Equals(data, UiStrings.CallbackData.StatsMetricDynByDays, StringComparison.Ordinal))
         {
-            await SceneRegistry.NavigateForwardAsync(context, UserState.StatsMetricDynByDay, ct);
+            await SceneRegistry.NavigateForwardAsync(context, UserState.StatsMetricDynByDays, ct);
             return;
         }
 

@@ -52,7 +52,7 @@ internal sealed class CategoryAddNameScene : IScene
             return;
         }
 
-        IReadOnlyList<CategoryDto> existing = await Utils.GetUserCategories(context, ct);
+        IReadOnlyList<Category> existing = await Utils.GetUserCategories(context, ct);
         bool duplicate = existing.Any(c => string.Equals(c.Name?.Trim(), name, StringComparison.OrdinalIgnoreCase));
 
         if (duplicate)

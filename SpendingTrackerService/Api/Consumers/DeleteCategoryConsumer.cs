@@ -7,10 +7,10 @@ namespace SpendingTrackerService.Api.Consumers;
 internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 {
     private readonly ILogger<DeleteCategoryConsumer> _logger;
-    private readonly ICategoryRepository _categories;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public DeleteCategoryConsumer(ILogger<DeleteCategoryConsumer> logger, ICategoryRepository categories)
-        => (_logger, _categories) = (logger, categories);
+    public DeleteCategoryConsumer(ILogger<DeleteCategoryConsumer> logger, ICategoryRepository categoryRepository)
+        => (_logger, _categoryRepository) = (logger, categoryRepository);
 
     public async Task Consume(ConsumeContext<DeleteCategoryRequest> context)
     {
@@ -25,7 +25,7 @@ internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 
         try
         {
-            bool success = await _categories.SoftDeleteAsync(request.UserId, request.CategoryId, request.RequestId, ct);
+            bool success = await _categoryRepository.SoftDeleteAsync(request.UserId, request.CategoryId, request.RequestId, ct);
             await context.RespondAsync(new DeleteCategoryResponse(success));
 
             if (success)
@@ -35,7 +35,7 @@ internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
                     request.UserId, request.CategoryId, context.CorrelationId, context.ConversationId
                 );
 
-                IReadOnlyList<CategoryDto> items = await _categories.GetActiveForUserAsync(request.UserId, ct);
+                IReadOnlyList<Category> items = await _categoryRepository.GetActiveForUserAsync(request.UserId, ct);
                 await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
             }
         }

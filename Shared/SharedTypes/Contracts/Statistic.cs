@@ -7,64 +7,44 @@
 /// <summary>
 /// DTO Итоги (Summary)
 /// </summary>
-public sealed record SummaryDto
+public sealed record Summary
 (
-    decimal Total,                       // Всего расходов за неделю
-    decimal AvgPerDay,                   // Средний расход в день (Total/7)
-    LargestExpenseDto LargestExpense,    // Крупнейшая трата (с подписью)
-    LargestCategoryDto LargestCategory,  // Крупнейшая категория (с долей)
-    DayPeakDto HighestSpendingDay        // Самый затратный день
+    decimal Total,                                  // Всего расходов за неделю
+    decimal AvgPerDay,                              // Средний расход в день (Total/7)
+    LargestExpenseDay LargestExpenseDay,         // Крупнейшая трата (с подписью)
+    TotalSpendByCategory TotalSpendByCategory,   // Крупнейшая категория (с долей)
+    DailyAmount DailyAmount                      // Самый затратный день
 );
 
 /// <summary>
-/// DTO Крупнейшая трата
+/// DTO Крупнейшая трата за день
 /// </summary>
-public sealed record LargestExpenseDto
+public sealed record LargestExpenseDay
 (
-    decimal Amount,
-    string? Comment,
-    DateOnly Day
+    decimal Amount,     // Сумма траты
+    string? Comment,    // Комментарий к трате
+    DateOnly Day        // День
 )
 {
-    public static LargestExpenseDto Empty = new(0m, string.Empty, default);
+    public static readonly LargestExpenseDay Empty = new(0m, string.Empty, default);
 };
 
 /// <summary>
-/// DTO Крупнейшая категория
+/// DTO Сумма трат по категории
 /// </summary>
-public sealed record LargestCategoryDto
+public sealed record TotalSpendByCategory
 (
-    string Name,
-    decimal Amount,
-    decimal SharePercent
+    string Name,    // Имя категории
+    decimal Amount  // Сумма трат по категории
 );
 
 /// <summary>
-/// DTO Элемент топ-5 категорий
+/// DTO Сумма за день
 /// </summary>
-public sealed record CategoryShareDto
+public sealed record DailyAmount
 (
-    string Name,
-    decimal Amount,
-    decimal SharePercent
-);
-
-/// <summary>
-/// DTO Динамика по дням
-/// </summary>
-public sealed record DayAmountDto
-(
-    DateOnly Day,
-    decimal Amount
-);
-
-/// <summary>
-/// DTO Самый затратный день
-/// </summary>
-public sealed record DayPeakDto
-(
-    DateOnly Day,
-    decimal Amount
+    DateOnly Day,   // День
+    decimal Amount  // Сумма трат за день
 );
 
 /// <summary>
@@ -77,6 +57,15 @@ public enum PeriodsOfTime
     Week,
     Month,
     Custom
+}
+
+/// <summary>
+/// Временной промежуток выборки
+/// </summary>
+public readonly record struct DateOnlyRange(DateOnly Start, DateOnly End)
+{
+    public static DateOnlyRange FromInclusive(DateOnly start, DateOnly end)
+        => start <= end ? new DateOnlyRange(start, end) : new DateOnlyRange(end, start);
 }
 
 //
@@ -96,15 +85,15 @@ public sealed record GetStatsFullWeekRequest
 /// </summary>
 public sealed record GetStatsFullWeekResponse
 (
-    SummaryDto Summary,
-    IReadOnlyList<CategoryShareDto> CategoriesTop5,
-    IReadOnlyList<DayAmountDto> Days
+    Summary Summary,
+    IReadOnlyList<TotalSpendByCategory> CategoriesTop5,
+    IReadOnlyList<DailyAmount> Days
 )
 {
-    public static readonly GetStatsFullWeekResponse Empty =
-        new(new SummaryDto(0m, 0m, new LargestExpenseDto(0m, string.Empty, default),
-                new LargestCategoryDto(string.Empty, 0m, 0m),
-                new DayPeakDto(default, 0m)),
+    public static GetStatsFullWeekResponse Empty { get; } =
+        new(new Summary(0m, 0m, new LargestExpenseDay(0m, string.Empty, default),
+                new TotalSpendByCategory(string.Empty, 0m),
+                new DailyAmount(default, 0m)),
             [],
             []);
 }
@@ -127,10 +116,10 @@ public sealed record GetStatsAmountResponse
 (
     decimal Amount,
     decimal AvgPerDay,
-    LargestExpenseDto LargestExpense
+    LargestExpenseDay LargestExpenseDay
 )
 {
-    public static GetStatsAmountResponse Empty = new(0m, 0m, LargestExpenseDto.Empty);
+    public static GetStatsAmountResponse Empty { get; } = new(0m, 0m, LargestExpenseDay.Empty);
 };
 
 /// <summary>
@@ -149,8 +138,11 @@ public sealed record GetStatsTopCategoryRequest
 /// </summary>
 public sealed record GetStatsTopCategoryResponse
 (
-    IReadOnlyList<CategoryDto> Categories
-);
+    IReadOnlyList<TotalSpendByCategory> Categories
+)
+{
+    public static GetStatsTopCategoryResponse Empty { get; } = new([]);
+};
 
 /// <summary>
 /// Запрос на получение динамики по дням за период
@@ -168,5 +160,5 @@ public sealed record GetStatsDaysRequest
 /// </summary>
 public sealed record GetStatsDaysResponse
 (
-    IReadOnlyList<DayAmountDto> Days
+    IReadOnlyList<DailyAmount> Days
 );

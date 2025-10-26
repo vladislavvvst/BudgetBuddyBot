@@ -7,10 +7,10 @@ namespace SpendingTrackerService.Api.Consumers;
 internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
 {
     private readonly ILogger<GetExpensesConsumer> _logger;
-    private readonly IExpenseRepository _expenses;
+    private readonly IExpenseRepository _expenseRepository;
 
-    public GetExpensesConsumer(ILogger<GetExpensesConsumer> logger, IExpenseRepository expenses)
-        => (_logger, _expenses) = (logger, expenses);
+    public GetExpensesConsumer(ILogger<GetExpensesConsumer> logger, IExpenseRepository expenseRepository)
+        => (_logger, _expenseRepository) = (logger, expenseRepository);
 
     public async Task Consume(ConsumeContext<GetExpensesRequest> context)
     {
@@ -22,7 +22,7 @@ internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
 
         try
         {
-            PagedExpenses pageResult = await _expenses.GetPagedAsync(userId, page, pageSize, ct);
+            PagedExpenses pageResult = await _expenseRepository.GetPagedAsync(userId, page, pageSize, ct);
             await context.RespondAsync(new GetExpensesResponse(pageResult.Items));
 
             _logger.LogInformation(

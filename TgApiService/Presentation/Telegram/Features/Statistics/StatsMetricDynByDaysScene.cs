@@ -9,12 +9,9 @@ using TgApiService.Presentation.Telegram.UI;
 
 namespace TgApiService.Presentation.Telegram.Features.Statistics;
 
-/// <summary>
-/// Сцена отображения страницы статистики с метрикой "Общая сумма за период"
-/// </summary>
-internal sealed class StatsMetricTotalAmountScene : IScene
+internal sealed class StatsMetricDynByDaysScene : IScene
 {
-    public UserState State => UserState.StatsMetricTotalAmount;
+    public UserState State => UserState.StatsMetricDynByDays;
 
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
@@ -23,10 +20,10 @@ internal sealed class StatsMetricTotalAmountScene : IScene
 
         try
         {
-            GetStatsAmountRequest request = new(chatId, periodsOfTime);
-            GetStatsAmountResponse response = await context.Tracker.GetStatsAmountAsync(request, ct);
+            GetStatsDaysRequest request = new(chatId, periodsOfTime);
+            GetStatsDaysResponse response = await context.Tracker.GetStatsDaysAsync(request, ct);
 
-            string text = UiStrings.FormatTotalAmountStats(response);
+            string text = UiStrings.FormatDaysHtml(response);
             await context.Bot.SendMessage(chatId, text, parseMode: ParseMode.Html, replyMarkup: UiKeyboards.BackOnlyKb, cancellationToken: ct);
         }
         catch (RequestFaultException ex)

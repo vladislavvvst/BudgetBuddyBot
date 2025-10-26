@@ -22,7 +22,7 @@ internal sealed class CategoryDeleteScene : IScene
     {
         long chatId = Utils.ChatId(context);
 
-        List<CategoryDto> categories = (await Utils.GetUserCategories(context, ct)).Where(c => !c.IsSystem).ToList();
+        List<Category> categories = (await Utils.GetUserCategories(context, ct)).Where(c => !c.IsSystem).ToList();
 
         if (categories.Count is 0)
         {
@@ -69,7 +69,7 @@ internal sealed class CategoryDeleteScene : IScene
         }
 
         // Перед удалением вытаскиваем из кэша имя категории по categoryId
-        IReadOnlyList<CategoryDto> categories = await context.StateCache.GetCategoriesAsync(chatId);
+        IReadOnlyList<Category> categories = await context.StateCache.GetCategoriesAsync(chatId);
         string categoryName = categories.FirstOrDefault(c => c.Id == categoryId)?.Name ?? $"#{categoryId}";
 
         try

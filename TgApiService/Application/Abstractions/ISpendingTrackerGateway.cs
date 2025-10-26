@@ -19,4 +19,6 @@ internal interface ISpendingTrackerGateway
     // Статистика
     Task<GetStatsFullWeekResponse> GetStatsFullWeekAsync(GetStatsFullWeekRequest request, CancellationToken ct);
     Task<GetStatsAmountResponse> GetStatsAmountAsync(GetStatsAmountRequest request, CancellationToken ct);
+    Task<GetStatsTopCategoryResponse> GetStatsTopCategoryAsync(GetStatsTopCategoryRequest request, CancellationToken ct);
+    Task<GetStatsDaysResponse> GetStatsDaysAsync(GetStatsDaysRequest request, CancellationToken ct);
 }

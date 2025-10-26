@@ -62,4 +62,18 @@ internal sealed class SpendingTrackerGateway : ISpendingTrackerGateway
         Response<GetStatsAmountResponse> response = await client.GetResponse<GetStatsAmountResponse>(request, ct);
         return response.Message;
     }
+
+    public async Task<GetStatsTopCategoryResponse> GetStatsTopCategoryAsync(GetStatsTopCategoryRequest request, CancellationToken ct)
+    {
+        IRequestClient<GetStatsTopCategoryRequest> client = _clients.CreateRequestClient<GetStatsTopCategoryRequest>();
+        Response<GetStatsTopCategoryResponse> response = await client.GetResponse<GetStatsTopCategoryResponse>(request, ct);
+        return response.Message;
+    }
+
+    public async Task<GetStatsDaysResponse> GetStatsDaysAsync(GetStatsDaysRequest request, CancellationToken ct)
+    {
+        IRequestClient<GetStatsDaysRequest> client = _clients.CreateRequestClient<GetStatsDaysRequest>();
+        Response<GetStatsDaysResponse> response = await client.GetResponse<GetStatsDaysResponse>(request, ct);
+        return response.Message;
+    }
 }

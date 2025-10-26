@@ -7,11 +7,11 @@ namespace SpendingTrackerService.Api.Consumers;
 internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
 {
     private readonly ILogger<AddExpenseConsumer> _logger;
-    private readonly IExpenseRepository _expenses;
-    private readonly ICategoryRepository _categories;
+    private readonly IExpenseRepository _expenseRepository;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public AddExpenseConsumer(ILogger<AddExpenseConsumer> logger, IExpenseRepository expenses, ICategoryRepository categories)
-        => (_logger, _expenses, _categories) = (logger, expenses, categories);
+    public AddExpenseConsumer(ILogger<AddExpenseConsumer> logger, IExpenseRepository expenseRepository, ICategoryRepository categoryRepository)
+        => (_logger, _expenseRepository, _categoryRepository) = (logger, expenseRepository, categoryRepository);
 
     public async Task Consume(ConsumeContext<AddExpenseRequest> context)
     {
@@ -26,7 +26,7 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
 
         try
         {
-            AddExpenseResult result = await _expenses.AddAsync(
+            AddExpenseResult result = await _expenseRepository.AddAsync(
                 request.UserId, request.CategoryId, request.Amount, request.Comment, request.RequestId, ct);
 
             await context.RespondAsync(new AddExpenseResponse(result.Success));
@@ -39,7 +39,7 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
                 );
 
                 // Вытаскиваем имя категории
-                CategoryDto? category = await _categories.GetCategoryAsync(request.UserId, request.CategoryId, ct);
+                Category? category = await _categoryRepository.GetCategoryAsync(request.UserId, request.CategoryId, ct);
 
                 // При неполных данных не уведомляем сервис статистики о новых тратах -> выходим
                 if (result.AddedAtUtc is null || category is null)
@@ -52,7 +52,7 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
                 }
 
                 await context.Publish(new ExpenseAddedNotification(request.UserId, category,
-                    new ExpenseDto(request.CategoryId, request.Amount, request.Comment, result.AddedAtUtc.Value)), ct);
+                    new Expense(request.CategoryId, request.Amount, request.Comment, result.AddedAtUtc.Value)), ct);
             }
             else
             {

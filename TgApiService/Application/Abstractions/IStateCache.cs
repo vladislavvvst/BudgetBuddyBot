@@ -27,7 +27,7 @@ internal enum UserState
     StatsFullWeek = 32,                 // Показать статистику за неделю
     StatsMetricTotalAmount = 33,        // Показать статистику общая сумма за период
     StatsMetricByCategory = 34,         // Показать статистику по категориям за период
-    StatsMetricDynByDay = 35,           // Показать статистику динамика по дням за период
+    StatsMetricDynByDays = 35,          // Показать статистику динамика по дням за период
 }
 
 /// <summary>
@@ -50,6 +50,6 @@ internal interface IStateCache
     Task RemoveStatsPeriod(long chatId);
 
     // Кэш списка категорий пользователя, чтобы не ходить за ними в сервис каждый раз
-    Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId);
-    Task SetCategoriesAsync(long chatId, IReadOnlyList<CategoryDto> categories);
+    Task<IReadOnlyList<Category>> GetCategoriesAsync(long chatId);
+    Task SetCategoriesAsync(long chatId, IReadOnlyList<Category> categories);
 }

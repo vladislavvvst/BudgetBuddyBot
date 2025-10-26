@@ -16,14 +16,13 @@ internal sealed class CategoryRepository : ICategoryRepository
     public CategoryRepository(ILogger<CategoryRepository> logger, ApplicationDbContext dbContext)
         => (_logger, _dbContext) = (logger, dbContext);
 
-    // Чтение данных
-    public async Task<IReadOnlyList<CategoryDto>> GetActiveForUserAsync(long userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Category>> GetActiveForUserAsync(long userId, CancellationToken cancellationToken)
     {
-        List<CategoryDto> items = await _dbContext.Categories
+        List<Category> items = await _dbContext.Categories
             .AsNoTracking()
             .Where(c => c.UserId == userId && !c.IsDeleted)
             .OrderBy(c => c.Name)
-            .Select(c => new CategoryDto(c.Id, c.Name, c.IsSystem))
+            .Select(c => new Category(c.Id, c.Name, c.IsSystem))
             .ToListAsync(cancellationToken);
 
         return items;
@@ -66,7 +65,6 @@ internal sealed class CategoryRepository : ICategoryRepository
         }
     }
 
-    // Запись данных
     public async Task<AddCategoryResult> AddOrRestoreAsync(long userId, string name, string requestId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(requestId))
@@ -181,7 +179,7 @@ internal sealed class CategoryRepository : ICategoryRepository
         return handledNow;
     }
 
-    public async Task<CategoryDto?> GetCategoryAsync(long userId, long categoryId, CancellationToken cancellationToken)
+    public async Task<Category?> GetCategoryAsync(long userId, long categoryId, CancellationToken cancellationToken)
     {
         CategoryEntity? category = await _dbContext.Categories
             .AsNoTracking().

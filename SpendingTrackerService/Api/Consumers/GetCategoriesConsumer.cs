@@ -7,10 +7,10 @@ namespace SpendingTrackerService.Api.Consumers;
 internal sealed class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
 {
     private readonly ILogger<GetCategoriesConsumer> _logger;
-    private readonly ICategoryRepository _categories;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public GetCategoriesConsumer(ILogger<GetCategoriesConsumer> logger, ICategoryRepository categories)
-        => (_logger, _categories) = (logger, categories);
+    public GetCategoriesConsumer(ILogger<GetCategoriesConsumer> logger, ICategoryRepository categoryRepository)
+        => (_logger, _categoryRepository) = (logger, categoryRepository);
 
     public async Task Consume(ConsumeContext<GetCategoriesRequest> context)
     {
@@ -19,8 +19,8 @@ internal sealed class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
 
         try
         {
-            await _categories.SeedDefaultsIfNeededAsync(userId, ct);
-            IReadOnlyList<CategoryDto> items = await _categories.GetActiveForUserAsync(userId, ct);
+            await _categoryRepository.SeedDefaultsIfNeededAsync(userId, ct);
+            IReadOnlyList<Category> items = await _categoryRepository.GetActiveForUserAsync(userId, ct);
             await context.RespondAsync(new GetCategoriesResponse(items));
 
             _logger.LogInformation(

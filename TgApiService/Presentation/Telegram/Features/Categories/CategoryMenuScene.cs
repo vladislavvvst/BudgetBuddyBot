@@ -19,7 +19,7 @@ internal sealed class CategoryMenuScene : IScene
     public async Task EnterAsync(UpdateContext context, CancellationToken ct)
     {
         long chatId = Utils.ChatId(context);
-        IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
+        IReadOnlyList<Category> categories = await Utils.GetUserCategories(context, ct);
 
         if (categories.Count is 0)
         {

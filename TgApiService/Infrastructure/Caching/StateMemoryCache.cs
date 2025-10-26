@@ -55,14 +55,14 @@ internal sealed class StateMemoryCache : IStateCache
     }
 
     // Кэш списка категорий пользователя
-    public Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(long chatId)
+    public Task<IReadOnlyList<Category>> GetCategoriesAsync(long chatId)
     {
         string cacheKey = BuildCategoriesKey(chatId);
-        _cache.TryGetValue(cacheKey, out IReadOnlyList<CategoryDto>? categories);
+        _cache.TryGetValue(cacheKey, out IReadOnlyList<Category>? categories);
         return Task.FromResult(categories ?? []);
     }
 
-    public Task SetCategoriesAsync(long chatId, IReadOnlyList<CategoryDto> categories)
+    public Task SetCategoriesAsync(long chatId, IReadOnlyList<Category> categories)
     {
         string cacheKey = BuildCategoriesKey(chatId);
         _cache.Set(cacheKey, categories);

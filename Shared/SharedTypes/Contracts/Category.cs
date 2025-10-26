@@ -5,9 +5,9 @@
 //
 
 /// <summary>
-/// DTO категории
+/// Категория
 /// </summary>
-public sealed record CategoryDto
+public sealed record Category
 (
     long Id,
     string Name,
@@ -31,7 +31,7 @@ public sealed record GetCategoriesRequest
 /// </summary>
 public sealed record GetCategoriesResponse
 (
-    IReadOnlyList<CategoryDto> Categories
+    IReadOnlyList<Category> Categories
 );
 
 /// <summary>
@@ -76,5 +76,5 @@ public sealed record DeleteCategoryResponse
 public sealed record UserCategoriesChangedNotification
 (
     long UserId,
-    IReadOnlyList<CategoryDto> Categories
+    IReadOnlyList<Category> Categories
 );

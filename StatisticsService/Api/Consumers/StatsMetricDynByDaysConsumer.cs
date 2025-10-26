@@ -3,22 +3,21 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using SharedTypes.Contracts;
 using StatisticsService.Infrastructure.Persistence;
-using StatisticsService.Infrastructure.Persistence.Entities;
 
 namespace StatisticsService.Api.Consumers;
 
-internal sealed class StatsMetricTotalAmountConsumer : IConsumer<GetStatsAmountRequest>
+internal sealed class StatsMetricDynByDaysConsumer : IConsumer<GetStatsDaysRequest>
 {
-    private readonly ILogger<StatsMetricTotalAmountConsumer> _logger;
+    private readonly ILogger<StatsMetricDynByDaysConsumer> _logger;
     private readonly ApplicationDbContext _dbContext;
 
-    public StatsMetricTotalAmountConsumer(ILogger<StatsMetricTotalAmountConsumer> logger, ApplicationDbContext dbContext)
+    public StatsMetricDynByDaysConsumer(ILogger<StatsMetricDynByDaysConsumer> logger, ApplicationDbContext dbContext)
         => (_logger, _dbContext) = (logger, dbContext);
 
-    public async Task Consume(ConsumeContext<GetStatsAmountRequest> context)
+    public async Task Consume(ConsumeContext<GetStatsDaysRequest> context)
     {
         CancellationToken ct = context.CancellationToken;
-        GetStatsAmountRequest message = context.Message;
+        GetStatsDaysRequest message = context.Message;
         long userId = context.Message.UserId;
 
         DateOnly endDay;
@@ -56,35 +55,12 @@ internal sealed class StatsMetricTotalAmountConsumer : IConsumer<GetStatsAmountR
             };
         }
 
-        List<StatsDailyEntity> statsDaily = await _dbContext.StatsDaily
+        List<DailyAmount> daysAmount = await _dbContext.StatsDaily
             .AsNoTracking()
             .Where(x => x.UserId == userId && x.Day >= startDay && x.Day <= endDay)
+            .Select(x => new DailyAmount(x.Day, x.AmountTotal))
             .ToListAsync(ct);
 
-        if (statsDaily.Count == 0)
-        {
-            _logger.LogWarning("No stats data found for user {UserId}", userId);
-            await context.RespondAsync(GetStatsAmountResponse.Empty);
-            return;
-        }
-
-        decimal total = statsDaily.Sum(x => x.AmountTotal);
-        decimal avgPerDay = total / statsDaily.Count;
-
-        StatsDailyEntity? largestExpenseEntity = statsDaily
-            .OrderByDescending(x => x.MaxExpenseAmount)
-            .FirstOrDefault();
-
-        LargestExpenseDay largestExpenseDay = largestExpenseEntity is null
-            ? LargestExpenseDay.Empty
-            : new LargestExpenseDay
-            (
-                largestExpenseEntity.MaxExpenseAmount,
-                largestExpenseEntity.MaxExpenseNote,
-                largestExpenseEntity.Day
-            );
-        GetStatsAmountResponse response = new(Amount: total, AvgPerDay: avgPerDay, LargestExpenseDay: largestExpenseDay);
-
-        await context.RespondAsync(response);
+        await context.RespondAsync(new GetStatsDaysResponse(daysAmount));
     }
 }

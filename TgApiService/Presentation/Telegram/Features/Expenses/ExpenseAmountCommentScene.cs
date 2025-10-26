@@ -165,8 +165,8 @@ internal sealed class ExpenseAmountCommentScene : IScene
     /// </summary>
     private static async Task<string> ResolveCategoryNameAsync(UpdateContext context, long categoryId, CancellationToken ct)
     {
-        IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
-        foreach (CategoryDto t in categories)
+        IReadOnlyList<Category> categories = await Utils.GetUserCategories(context, ct);
+        foreach (Category t in categories)
         {
             if (t.Id == categoryId)
                 return t.Name;

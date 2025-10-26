@@ -5,9 +5,9 @@
 //
 
 /// <summary>
-/// DTO траты
+/// Трата
 /// </summary>
-public sealed record ExpenseDto
+public sealed record Expense
 (
     long CategoryId,
     decimal Amount,
@@ -54,7 +54,7 @@ public sealed record GetExpensesRequest
 /// </summary>
 public sealed record GetExpensesResponse
 (
-    IReadOnlyList<ExpenseDto> Expenses
+    IReadOnlyList<Expense> Expenses
 );
 
 /// <summary>
@@ -63,6 +63,6 @@ public sealed record GetExpensesResponse
 public sealed record ExpenseAddedNotification
 (
     long UserId,
-    CategoryDto Category,
-    ExpenseDto Expense
+    Category Category,
+    Expense Expense
 );

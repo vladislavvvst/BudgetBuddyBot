@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
 using System.Net;
+using System.Text;
+using SharedTypes.Contracts;
 
 namespace TgApiService.Presentation.Telegram.UI;
 
@@ -35,7 +37,7 @@ internal static class UiStrings
 
         public const string StatsMetricTotalAmount = "stats:metric:total_amount";
         public const string StatsMetricByCategory  = "stats:metric:by_category";
-        public const string StatsMetricDynByDay    = "stats:metric:dyn_by_day";
+        public const string StatsMetricDynByDays    = "stats:metric:dyn_by_days";
     }
 
     // ==============
@@ -172,7 +174,7 @@ internal static class UiStrings
             ? string.Empty
             : $"\n📝 {HtmlText(comment!)}");
 
-    private static string Rub(decimal value) => value.ToString("N2", CultureInfo.CurrentCulture) + " ₽";
+    public static string Rub(decimal value) => value.ToString("N2", CultureInfo.CurrentCulture) + " ₽";
 
     // ==============
     // HTML helpers для Telegram
@@ -197,4 +199,178 @@ internal static class UiStrings
 
     private static string HtmlLines(IEnumerable<string> lines) =>
         HtmlText(string.Join("\n", lines));
+
+    // Форматированный вывод для страниц
+    public static string FormatFullWeekStats(GetStatsFullWeekResponse stats)
+    {
+        StringBuilder sb = new();
+
+        DateOnly startDay = DateOnly.FromDateTime(DateTime.Now);
+        DateOnly endDay = startDay.AddDays(-6);
+
+        sb.AppendLine($"📊 <b>Неделя: {startDay:dd.MM}–{endDay:dd.MM}</b>");
+        sb.AppendLine();
+
+        Summary s = stats.Summary;
+        sb.AppendLine($"💰 Всего: <b>{Rub(s.Total)}</b>");
+        sb.AppendLine($"📉 В день: <b>{Rub(s.AvgPerDay)}</b>");
+
+        if (s.LargestExpenseDay.Amount > 0m)
+        {
+            string label = string.IsNullOrWhiteSpace(s.LargestExpenseDay.Comment)
+                ? string.Empty
+                : $" — {HtmlText(s.LargestExpenseDay.Comment)}";
+            string dayStr = s.LargestExpenseDay.Day == default ? string.Empty : $" ({s.LargestExpenseDay.Day:dd.MM})";
+            sb.AppendLine($"🔥 Крупнейшая трата: <b>{Rub(s.LargestExpenseDay.Amount)}</b>{label}{dayStr}");
+        }
+
+        if (s.DailyAmount.Amount > 0m && s.DailyAmount.Day != default)
+            sb.AppendLine($"🔥 Самый затратный день: {s.DailyAmount.Day:dd.MM} — <b>{Rub(s.DailyAmount.Amount)}</b>");
+
+        sb.AppendLine();
+
+        sb.AppendLine("📂 <b>Топ категорий</b>");
+        if (stats.CategoriesTop5 is { Count: > 0 })
+        {
+            decimal shownTotal = 0m;
+            foreach (TotalSpendByCategory item in stats.CategoriesTop5)
+            {
+                string name = HtmlText(item.Name);
+                shownTotal += item.Amount;
+                sb.AppendLine($"• {name} — <b>{Rub(item.Amount)}</b>");
+            }
+
+            if (!string.IsNullOrWhiteSpace(s.TotalSpendByCategory.Name) && s.TotalSpendByCategory.Amount > 0m)
+                sb.AppendLine($"🔥 Крупнейшая категория: {HtmlText(s.TotalSpendByCategory.Name)} — {Rub(s.TotalSpendByCategory.Amount)}");
+
+            decimal leftover = Math.Max(0m, s.Total - shownTotal);
+            if (leftover > 0m)
+                sb.AppendLine($"• Прочее — <b>{Rub(leftover)}</b>");
+        }
+        else
+        {
+            sb.AppendLine("— нет данных");
+        }
+
+        sb.AppendLine();
+
+        // Динамика по дням (7 строк, хронологически)
+        sb.AppendLine("📈 <b>Динамика по дням</b>");
+        if (stats.Days is { Count: > 0 })
+        {
+            foreach (DailyAmount d in stats.Days.OrderBy(d => d.Day))
+                sb.AppendLine($"• {d.Day:dd.MM} — <b>{Rub(d.Amount)}</b>");
+        }
+        else
+        {
+            sb.AppendLine("— нет данных");
+        }
+
+        return sb.ToString();
+    }
+
+    public static string FormatTopCategories(GetStatsTopCategoryResponse response, int maxItems = 10, string currencySymbol = "₽")
+    {
+        StringBuilder sb = new(256);
+
+        sb.AppendLine("<b>🏆 Топ категорий</b>");
+
+        if (response?.Categories is null || response.Categories.Count == 0)
+        {
+            sb.Append("Нет данных");
+            return sb.ToString();
+        }
+
+        int total = response.Categories.Count;
+        int take = Math.Max(0, Math.Min(maxItems, total));
+        if (take == 0)
+        {
+            sb.Append("Нет данных");
+            return sb.ToString();
+        }
+
+        sb.AppendLine();
+
+        string[] medals = ["🥇", "🥈", "🥉"];
+
+        int topCount = Math.Min(3, take);
+        for (int i = 0; i < topCount; i++)
+        {
+            TotalSpendByCategory dto = response.Categories[i];
+            string name = WebUtility.HtmlEncode(dto.Name);
+            string amount = Rub(dto.Amount);
+
+            sb.Append(medals[i]).Append(' ')
+                .Append("<b>").Append(name).Append("</b>")
+                .Append(" — ").Append(amount).Append('\n');
+        }
+
+        sb.AppendLine();
+
+        if (take > topCount)
+        {
+            sb.Append("<i>Остальные:</i>").Append('\n');
+
+            for (int i = topCount; i < take; i++)
+            {
+                TotalSpendByCategory dto = response.Categories[i];
+                string name = WebUtility.HtmlEncode(dto.Name);
+                string amount = Rub(dto.Amount);
+
+                sb.Append("• ").Append(name)
+                    .Append(" — ").Append(amount).Append('\n');
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    public static string FormatDaysHtml(GetStatsDaysResponse response)
+    {
+        IReadOnlyList<DailyAmount> days = response?.Days ?? [];
+        StringBuilder sb = new();
+
+        sb.AppendLine("📊 <b>Динамика по дням</b>");
+
+        if (days.Count == 0)
+        {
+            sb.Append("Нет данных");
+            return sb.ToString();
+        }
+
+        sb.AppendLine();
+
+        List<DailyAmount> ordered = days.OrderBy(d => d.Day).ToList();
+
+        foreach (DailyAmount item in ordered)
+        {
+            string date = item.Day.ToString("dd.MM", CultureInfo.CurrentCulture);
+            string amount = Rub(item.Amount);
+            sb.Append("• <b>").Append(date).Append("</b> — ").AppendLine(amount);
+        }
+
+        decimal total = ordered.Sum(d => d.Amount);
+        int count = days.Count;
+        decimal average = count > 0 ? total / count : 0m;
+
+        sb.AppendLine();
+        sb.Append("<b>Итого:</b> ").AppendLine(Rub(total));
+        sb.Append("<b>Среднее в день:</b> ").Append(Rub(average));
+
+        return sb.ToString();
+    }
+
+    public static string FormatTotalAmountStats(GetStatsAmountResponse response)
+    {
+        string largestNote = string.IsNullOrWhiteSpace(response.LargestExpenseDay?.Comment)
+            ? "без комментария"
+            : response.LargestExpenseDay!.Comment;
+
+        string largest =
+            response.LargestExpenseDay is { Amount: > 0 } le
+                ? $"🔥 Крупнейшая трата: {Rub(le.Amount)} — {largestNote}"
+                : "🔥 Крупнейшая трата: —";
+
+        return $"💰 Всего расходов: {Rub(response.Amount)}\n📈 Средний расход в день: {Rub(response.AvgPerDay)}\n{largest}";
+    }
 }

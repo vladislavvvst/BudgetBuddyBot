@@ -24,7 +24,7 @@ internal sealed class ExpenseShowLastScene : IScene
             return;
         }
 
-        IReadOnlyList<CategoryDto> categories = await Utils.GetUserCategories(context, ct);
+        IReadOnlyList<Category> categories = await Utils.GetUserCategories(context, ct);
         Dictionary<long, string> byId = categories.ToDictionary(x => x.Id, x => x.Name);
 
         IEnumerable<string> lines = response.Expenses.Select(i =>

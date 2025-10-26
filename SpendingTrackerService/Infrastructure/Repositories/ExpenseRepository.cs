@@ -79,12 +79,12 @@ internal sealed class ExpenseRepository : IExpenseRepository
 
         int total = await queryable.CountAsync(cancellationToken);
 
-        List<ExpenseDto> items = await queryable
+        List<Expense> items = await queryable
             .OrderByDescending(e => e.AddedAtUtc)
             .ThenByDescending(e => e.Id)
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(x => new ExpenseDto(x.CategoryId, x.Amount, x.Comment, x.AddedAtUtc))
+            .Select(x => new Expense(x.CategoryId, x.Amount, x.Comment, x.AddedAtUtc))
             .ToListAsync(cancellationToken);
 
         return new PagedExpenses(items, total, safePage, safeSize);

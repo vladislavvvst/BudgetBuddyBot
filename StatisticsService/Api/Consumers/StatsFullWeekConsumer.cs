@@ -54,17 +54,17 @@ internal sealed class StatsFullWeekConsumer : IConsumer<GetStatsFullWeekRequest>
             break;
         }
 
-        DayPeakDto highestDay = new(peakDay, peakAmount);
+        DailyAmount highestDay = new(peakDay, peakAmount);
 
         // Крупнейшая трата недели (берем MaxExpenseAmount среди дневных срезов)
-        LargestExpenseDto largestExpense;
+        LargestExpenseDay largestExpenseDay;
         StatsDailyEntity? maxExpenseRow = statsDaily
             .OrderByDescending(d => d.MaxExpenseAmount)
             .FirstOrDefault();
 
         if (maxExpenseRow is null || maxExpenseRow.MaxExpenseAmount <= 0m)
         {
-            largestExpense = new LargestExpenseDto(0m, string.Empty, default);
+            largestExpenseDay = new LargestExpenseDay(0m, string.Empty, default);
         }
         else
         {
@@ -72,11 +72,11 @@ internal sealed class StatsFullWeekConsumer : IConsumer<GetStatsFullWeekRequest>
                 ? GetTopCategoryNameForDay(statsDailyByCategory, maxExpenseRow.Day)
                 : maxExpenseRow.MaxExpenseNote!;
 
-            largestExpense = new LargestExpenseDto(maxExpenseRow.MaxExpenseAmount, label ?? string.Empty, maxExpenseRow.Day);
+            largestExpenseDay = new LargestExpenseDay(maxExpenseRow.MaxExpenseAmount, label ?? string.Empty, maxExpenseRow.Day);
         }
 
         // Топ-5 категорий (по сумме за неделю)
-        List<CategoryShareDto> categoriesTop5;
+        List<TotalSpendByCategory> categoriesTop5;
         if (total <= 0m || statsDailyByCategory.Count == 0)
         {
             categoriesTop5 = [];
@@ -91,38 +91,27 @@ internal sealed class StatsFullWeekConsumer : IConsumer<GetStatsFullWeekRequest>
                 .ToList();
 
             categoriesTop5 = totalsByCategory
-                .Select(x =>
-                {
-                    decimal share = Math.Round(x.Amount / total * 100m, 2, MidpointRounding.AwayFromZero);
-                    return new CategoryShareDto(x.Name, x.Amount, share);
-                })
+                .Select(x => new TotalSpendByCategory(x.Name, x.Amount))
                 .ToList();
         }
 
         // Крупнейшая категория (если есть данные)
-        LargestCategoryDto largestCategory;
-        if (categoriesTop5.Count == 0)
-        {
-            largestCategory = new LargestCategoryDto(string.Empty, 0m, 0m);
-        }
-        else
-        {
-            CategoryShareDto top = categoriesTop5.OrderByDescending(c => c.Amount).First();
-            largestCategory = new LargestCategoryDto(top.Name, top.Amount, top.SharePercent);
-        }
+        TotalSpendByCategory largestTotalSpendByCategory = categoriesTop5.Count == 0
+            ? new(string.Empty, 0m)
+            : categoriesTop5.OrderByDescending(c => c.Amount).First();
 
         // Ряд по дням (ровно 7 записей)
-        List<DayAmountDto> daySeries = days
-            .Select(d => new DayAmountDto(d, dayTotals[d]))
+        List<DailyAmount> daySeries = days
+            .Select(d => new DailyAmount(d, dayTotals[d]))
             .ToList();
 
-        SummaryDto summary = new
+        Summary summary = new
         (
             Total: total,
             AvgPerDay: avgPerDay,
-            LargestExpense: largestExpense,
-            LargestCategory: largestCategory,
-            HighestSpendingDay: highestDay
+            LargestExpenseDay: largestExpenseDay,
+            TotalSpendByCategory: largestTotalSpendByCategory,
+            DailyAmount: highestDay
         );
 
         GetStatsFullWeekResponse response = new

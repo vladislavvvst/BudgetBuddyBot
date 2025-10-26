@@ -42,11 +42,11 @@ internal static class UiKeyboards
     ([
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricTotalAmount, UiStrings.CallbackData.StatsMetricTotalAmount)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricByCategory, UiStrings.CallbackData.StatsMetricByCategory)],
-        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricDynByDay, UiStrings.CallbackData.StatsMetricDynByDay)],
+        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMetricDynByDay, UiStrings.CallbackData.StatsMetricDynByDays)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Back, UiStrings.CallbackData.NavBack)]
     ]);
 
-    public static InlineKeyboardMarkup BuildCategoriesPickKb(IReadOnlyList<CategoryDto> categories)
+    public static InlineKeyboardMarkup BuildCategoriesPickKb(IReadOnlyList<Category> categories)
     {
         List<InlineKeyboardButton[]> rows = [];
 
@@ -67,7 +67,7 @@ internal static class UiKeyboards
         return new InlineKeyboardMarkup(rows);
     }
 
-    public static InlineKeyboardMarkup BuildCategoriesDeleteKb(List<CategoryDto> categories)
+    public static InlineKeyboardMarkup BuildCategoriesDeleteKb(List<Category> categories)
     {
         List<InlineKeyboardButton[]> rows = [];
 

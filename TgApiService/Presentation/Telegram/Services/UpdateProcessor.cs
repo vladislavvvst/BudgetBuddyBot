@@ -49,15 +49,15 @@ internal sealed class UpdateProcessor
     {
         ct.ThrowIfCancellationRequested();
 
-        // if (!IsAllowedAndPrivate(update))
-        // {
-        //     long? chatId = TryGetChatId(update);
-        //
-        //     if (chatId is { } id)
-        //         await botClient.SendMessage(id, "Пока не для всех :(", cancellationToken: ct);
-        //
-        //     return;
-        // }
+        if (!IsAllowedAndPrivate(update))
+        {
+            long? chatId = TryGetChatId(update);
+
+            if (chatId is { } id)
+                await botClient.SendMessage(id, "Пока не для всех :(", cancellationToken: ct);
+
+            return;
+        }
 
         UpdateContext context = new(_logger, _stateStorage, _tracker, botClient, update);
         await SceneRouter.RouteAsync(context, ct);
@@ -70,7 +70,8 @@ internal sealed class UpdateProcessor
         if (id is null)
             return false;
 
-        bool allowed = id == _tgOptions.Value.AdminId || id == _tgOptions.Value.TestUserId;
+        // todo: бот для всех :)
+        bool allowed = true; // id == _tgOptions.Value.AdminId || id == _tgOptions.Value.TestUserId;
         return allowed && IsPrivate(update);
     }
 

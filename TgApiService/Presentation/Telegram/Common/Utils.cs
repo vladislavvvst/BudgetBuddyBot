@@ -11,11 +11,11 @@ internal static class Utils
     public static long ChatId(UpdateContext context) =>
         context.Update.Message?.Chat.Id ?? context.Update.CallbackQuery!.Message!.Chat.Id;
 
-    public static async Task<IReadOnlyList<CategoryDto>> GetUserCategories(UpdateContext context, CancellationToken ct)
+    public static async Task<IReadOnlyList<Category>> GetUserCategories(UpdateContext context, CancellationToken ct)
     {
         long chatId = ChatId(context);
 
-        IReadOnlyList<CategoryDto> categories = await context.StateCache.GetCategoriesAsync(chatId);
+        IReadOnlyList<Category> categories = await context.StateCache.GetCategoriesAsync(chatId);
 
         if (categories.Count > 0)
             return categories;
