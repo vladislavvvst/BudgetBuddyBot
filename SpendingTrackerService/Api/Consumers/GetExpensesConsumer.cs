@@ -1,5 +1,6 @@
 ﻿using MassTransit;
 using SharedTypes.Contracts;
+using SpendingTrackerService.Api.Mapping;
 using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService.Api.Consumers;
@@ -23,7 +24,7 @@ internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
         try
         {
             PagedExpenses pageResult = await _expenseRepository.GetPagedAsync(userId, page, pageSize, ct);
-            await context.RespondAsync(new GetExpensesResponse(pageResult.Items));
+            await context.RespondAsync(new GetExpensesResponse(ExpenseContractMapper.ToContract(pageResult.Items)));
 
             _logger.LogInformation(
                 "[GetExpenses] user={UserId}, page={Page}/{PageSize}, fetched={Count}, total={Total}, corr={CorrelationId}, conv={ConversationId}",

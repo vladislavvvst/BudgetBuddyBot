@@ -1,5 +1,6 @@
 ﻿using MassTransit;
 using SharedTypes.Contracts;
+using SpendingTrackerService.Api.Mapping;
 using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService.Api.Consumers;
@@ -8,10 +9,9 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
 {
     private readonly ILogger<AddExpenseConsumer> _logger;
     private readonly IExpenseRepository _expenseRepository;
-    private readonly ICategoryRepository _categoryRepository;
 
-    public AddExpenseConsumer(ILogger<AddExpenseConsumer> logger, IExpenseRepository expenseRepository, ICategoryRepository categoryRepository)
-        => (_logger, _expenseRepository, _categoryRepository) = (logger, expenseRepository, categoryRepository);
+    public AddExpenseConsumer(ILogger<AddExpenseConsumer> logger, IExpenseRepository expenseRepository)
+        => (_logger, _expenseRepository) = (logger, expenseRepository);
 
     public async Task Consume(ConsumeContext<AddExpenseRequest> context)
     {
@@ -38,20 +38,17 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
                     request.UserId, request.CategoryId, request.Amount, result.ExpenseId, result.IsIdempotent, context.CorrelationId, context.ConversationId
                 );
 
-                // Вытаскиваем имя категории
-                Category? category = await _categoryRepository.GetCategoryAsync(request.UserId, request.CategoryId, ct);
-
                 // При неполных данных не уведомляем сервис статистики о новых тратах -> выходим
-                if (result.AddedAtUtc is null || category is null)
+                if (result.AddedAtUtc is null || result.CategoryEntity is null)
                 {
                     _logger.LogWarning(
                         "[AddExpense] Rejected user={UserId}, time={AddedAtUtc}, category={Category}",
-                        request.UserId, result.AddedAtUtc is null ? "null" : result.AddedAtUtc.ToString(), category is null ? "null" : category.Name
+                        request.UserId, result.AddedAtUtc is null ? "null" : result.AddedAtUtc.ToString(), result.CategoryEntity is null ? "null" : result.CategoryEntity.Name
                     );
                     return;
                 }
 
-                await context.Publish(new ExpenseAddedNotification(request.UserId, category,
+                await context.Publish(new ExpenseAddedNotification(request.UserId, CategoryContractMapper.ToContract(result.CategoryEntity),
                     new Expense(request.CategoryId, request.Amount, request.Comment, result.AddedAtUtc.Value)), ct);
             }
             else

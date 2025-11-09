@@ -1,5 +1,7 @@
 ﻿using MassTransit;
 using SharedTypes.Contracts;
+using SpendingTrackerService.Api.Mapping;
+using SpendingTrackerService.Infrastructure.Persistence.Entities;
 using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService.Api.Consumers;
@@ -35,8 +37,8 @@ internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
                     request.UserId, request.CategoryId, context.CorrelationId, context.ConversationId
                 );
 
-                IReadOnlyList<Category> items = await _categoryRepository.GetActiveForUserAsync(request.UserId, ct);
-                await context.Publish(new UserCategoriesChangedNotification(request.UserId, items), ct);
+                IReadOnlyList<CategoryEntity> items = await _categoryRepository.GetActiveForUserAsync(request.UserId, ct);
+                await context.Publish(new UserCategoriesChangedNotification(request.UserId, CategoryContractMapper.ToContract(items)), ct);
             }
         }
         catch (Exception ex)

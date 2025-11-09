@@ -1,5 +1,7 @@
 ﻿using MassTransit;
 using SharedTypes.Contracts;
+using SpendingTrackerService.Api.Mapping;
+using SpendingTrackerService.Infrastructure.Persistence.Entities;
 using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService.Api.Consumers;
@@ -20,8 +22,8 @@ internal sealed class GetCategoriesConsumer : IConsumer<GetCategoriesRequest>
         try
         {
             await _categoryRepository.SeedDefaultsIfNeededAsync(userId, ct);
-            IReadOnlyList<Category> items = await _categoryRepository.GetActiveForUserAsync(userId, ct);
-            await context.RespondAsync(new GetCategoriesResponse(items));
+            IReadOnlyList<CategoryEntity> items = await _categoryRepository.GetActiveForUserAsync(userId, ct);
+            await context.RespondAsync(new GetCategoriesResponse(CategoryContractMapper.ToContract(items)));
 
             _logger.LogInformation(
                 "[GetCategories] user={UserId}, count={Count}, corr={CorrelationId}, conv={ConversationId}",

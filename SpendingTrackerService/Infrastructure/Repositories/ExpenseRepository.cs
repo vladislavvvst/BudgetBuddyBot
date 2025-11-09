@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using SharedTypes.Contracts;
 using SpendingTrackerService.Infrastructure.Persistence;
 using SpendingTrackerService.Infrastructure.Persistence.Entities;
 
@@ -60,7 +59,12 @@ internal sealed class ExpenseRepository : IExpenseRepository
             await _dbContext.Expenses.AddAsync(entity, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            return new AddExpenseResult(true, false, entity.Id, entity.AddedAtUtc);
+            // Получаем категорию при добавлении траты для дальнейшего отслеживания
+            CategoryEntity? categoryEntity = await _dbContext.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.Id == categoryId && !c.IsDeleted, cancellationToken);
+
+            return new AddExpenseResult(true, false, categoryEntity, entity.Id, entity.AddedAtUtc);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
         {
@@ -79,12 +83,11 @@ internal sealed class ExpenseRepository : IExpenseRepository
 
         int total = await queryable.CountAsync(cancellationToken);
 
-        List<Expense> items = await queryable
+        List<ExpenseEntity> items = await queryable
             .OrderByDescending(e => e.AddedAtUtc)
             .ThenByDescending(e => e.Id)
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(x => new Expense(x.CategoryId, x.Amount, x.Comment, x.AddedAtUtc))
             .ToListAsync(cancellationToken);
 
         return new PagedExpenses(items, total, safePage, safeSize);

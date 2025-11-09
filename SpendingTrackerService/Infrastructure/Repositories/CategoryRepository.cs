@@ -4,7 +4,6 @@ using SpendingTrackerService.Infrastructure.Defaults;
 using SpendingTrackerService.Infrastructure.Persistence;
 using SpendingTrackerService.Infrastructure.Persistence.Entities;
 using System.Text.RegularExpressions;
-using SharedTypes.Contracts;
 
 namespace SpendingTrackerService.Infrastructure.Repositories;
 
@@ -16,13 +15,12 @@ internal sealed class CategoryRepository : ICategoryRepository
     public CategoryRepository(ILogger<CategoryRepository> logger, ApplicationDbContext dbContext)
         => (_logger, _dbContext) = (logger, dbContext);
 
-    public async Task<IReadOnlyList<Category>> GetActiveForUserAsync(long userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CategoryEntity>> GetActiveForUserAsync(long userId, CancellationToken cancellationToken)
     {
-        List<Category> items = await _dbContext.Categories
+        List<CategoryEntity> items = await _dbContext.Categories
             .AsNoTracking()
             .Where(c => c.UserId == userId && !c.IsDeleted)
             .OrderBy(c => c.Name)
-            .Select(c => new Category(c.Id, c.Name, c.IsSystem))
             .ToListAsync(cancellationToken);
 
         return items;
@@ -78,7 +76,7 @@ internal sealed class CategoryRepository : ICategoryRepository
             return new AddCategoryResult(true, false, null);
 
         // Нормализация имени
-        string collapsed = CollapseSpaces(name);
+        string collapsed = Regex.Replace(name, @"\s{2,}", " ").Trim();
         if (string.IsNullOrWhiteSpace(collapsed))
             return new AddCategoryResult(false, false, null);
 
@@ -178,18 +176,4 @@ internal sealed class CategoryRepository : ICategoryRepository
 
         return handledNow;
     }
-
-    public async Task<Category?> GetCategoryAsync(long userId, long categoryId, CancellationToken cancellationToken)
-    {
-        CategoryEntity? category = await _dbContext.Categories
-            .AsNoTracking().
-            FirstOrDefaultAsync(c => c.UserId == userId && c.Id == categoryId, cancellationToken: cancellationToken);
-
-        if (category is null)
-            return null;
-
-        return new(category.Id, category.Name, category.IsSystem);
-    }
-
-    private static string CollapseSpaces(string s) => Regex.Replace(s, @"\s{2,}", " ").Trim();
 }
