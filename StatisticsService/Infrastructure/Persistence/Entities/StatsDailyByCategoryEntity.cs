@@ -10,5 +10,5 @@ internal sealed class StatsDailyByCategoryEntity
     public long CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public int ExpensesCount { get; set; }
-    public DateTimeOffset UpdatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 }

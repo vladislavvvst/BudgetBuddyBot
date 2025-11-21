@@ -66,7 +66,7 @@ internal sealed class ExpenseAddedConsumer : IConsumer<ExpenseAddedNotification>
                 daily.MaxExpenseNote = note;
             }
 
-            daily.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            daily.UpdatedAtUtc = DateTime.UtcNow;
         }
 
         if (dailyByCat is null)
@@ -96,7 +96,7 @@ internal sealed class ExpenseAddedConsumer : IConsumer<ExpenseAddedNotification>
             }
 
             dailyByCat.CategoryName = categoryName;
-            dailyByCat.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            dailyByCat.UpdatedAtUtc = DateTime.UtcNow;
         }
 
         try

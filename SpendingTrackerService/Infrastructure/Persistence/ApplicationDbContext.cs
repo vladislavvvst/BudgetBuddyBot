@@ -25,7 +25,6 @@ internal sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.Amount).HasColumnType("numeric(19,2)").IsRequired();
             entity.Property(x => x.Comment).HasMaxLength(512);
             entity.Property(x => x.AddedAtUtc)
-                .HasColumnType("timestamptz")
                 .HasDefaultValueSql("now()")
                 .ValueGeneratedOnAdd()
                 .IsRequired();
@@ -73,7 +72,6 @@ internal sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.IsDeleted).IsRequired();
             entity.Property(x => x.IsSystem).IsRequired();
             entity.Property(x => x.AddedAtUtc)
-                .HasColumnType("timestamptz")
                 .HasDefaultValueSql("now()")
                 .ValueGeneratedOnAdd()
                 .IsRequired();

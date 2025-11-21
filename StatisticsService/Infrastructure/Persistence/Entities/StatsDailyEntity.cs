@@ -8,5 +8,5 @@ internal sealed class StatsDailyEntity
     public int ExpensesCount { get; set; }
     public decimal MaxExpenseAmount { get; set; }
     public string? MaxExpenseNote { get; set; }
-    public DateTimeOffset UpdatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 }
