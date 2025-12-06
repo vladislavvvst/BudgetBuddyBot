@@ -149,10 +149,10 @@ internal sealed class ExpenseAmountCommentScene : IScene
             commentPart = input[(spaceIndex + 1)..].Trim();
         }
 
-        // Нормализуем десятичный разделитель
+        // Нормализуем десятичный разделитель и парсим инвариантно, чтобы принимать "." и "," независимо от локали
         numberPart = numberPart.Replace(',', '.');
 
-        if (!decimal.TryParse(numberPart, NumberStyles.Number, CultureInfo.CurrentCulture, out decimal parsed))
+        if (!decimal.TryParse(numberPart, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
             return false;
 
         amount = parsed;

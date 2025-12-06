@@ -101,10 +101,7 @@ internal static class UiStrings
             "• 🗂️ Изменять список категорий\n" +
             "• 📊 Показывать статистику\n";
 
-        public const string StartExpensePrompt =
-            "Введите сумму и комментарий (опционально), например:\n" +
-            "<b>105590 Iphone 16 Pro Max 256 GB</b>";
-
+        public const string StartExpensePrompt = "Введите сумму и комментарий (опционально)";
         public const string SelectMetricPrompt = "Выберите метрику:";
     }
 
@@ -122,8 +119,7 @@ internal static class UiStrings
         public const string TextExpected           = "⚠️ Ожидается текстовое сообщение";
         public const string StringTooLong          = "⚠️ Строка не должна превышать 64 символа";
 
-        public const string BadFormat              = "🤔 Некорректный ввод\nФормат: <b>Сумма Комментарий (опционально)</b>\n" +
-                                                     "Пример: <b>105590 Iphone 16 Pro Max 256 GB</b>";
+        public const string BadFormat              = "🤔 Некорректный ввод\nФормат: <b>Сумма Комментарий (опционально)</b>\n";
 
         public const string BadAmount              = "🚫 Некорректная сумма\nВведите положительное число";
         public const string UnknownCmd             = "🤷‍♂️ Неизвестная команда";

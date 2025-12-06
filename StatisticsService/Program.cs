@@ -26,6 +26,13 @@ internal static class Program
         {
             busCfg.SetKebabCaseEndpointNameFormatter();
 
+            busCfg.AddEntityFrameworkOutbox<ApplicationDbContext>(outbox =>
+            {
+                outbox.QueryDelay = TimeSpan.FromSeconds(1);
+                outbox.UsePostgres();
+                outbox.UseBusOutbox();
+            });
+
             busCfg.AddConsumer<StatsFullWeekConsumer>();
             busCfg.AddConsumer<ExpenseAddedConsumer, ExpenseAddedConsumerDefinition>();
             busCfg.AddConsumer<StatsMetricTotalAmountConsumer>();
