@@ -27,7 +27,7 @@ internal static class Program
             busCfg.SetKebabCaseEndpointNameFormatter();
 
             busCfg.AddConsumer<StatsFullWeekConsumer>();
-            busCfg.AddConsumer<ExpenseAddedConsumer>();
+            busCfg.AddConsumer<ExpenseAddedConsumer, ExpenseAddedConsumerDefinition>();
             busCfg.AddConsumer<StatsMetricTotalAmountConsumer>();
             busCfg.AddConsumer<StatsMetricByCategoryConsumer>();
             busCfg.AddConsumer<StatsMetricDynByDaysConsumer>();

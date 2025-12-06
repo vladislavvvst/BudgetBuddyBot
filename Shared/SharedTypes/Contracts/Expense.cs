@@ -64,5 +64,6 @@ public sealed record ExpenseAddedNotification
 (
     long UserId,
     Category Category,
-    Expense Expense
+    Expense Expense,
+    string RequestId
 );

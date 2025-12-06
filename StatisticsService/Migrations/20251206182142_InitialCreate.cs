@@ -4,37 +4,14 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace SpendingTrackerService.Migrations
+namespace StatisticsService.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateDataAndAddStats : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:PostgresExtension:citext", ",,");
-
-            migrationBuilder.CreateTable(
-                name: "categories",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<long>(type: "bigint", nullable: false),
-                    Name = table.Column<string>(type: "citext", maxLength: 128, nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    IsSystem = table.Column<bool>(type: "boolean", nullable: false),
-                    AddedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    RequestId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_categories", x => x.Id);
-                    table.UniqueConstraint("AK_categories_user_id_id", x => new { x.UserId, x.Id });
-                    table.CheckConstraint("CK_categories_not_system_deleted", "NOT (\"IsSystem\" AND \"IsDeleted\")");
-                });
-
             migrationBuilder.CreateTable(
                 name: "InboxState",
                 columns: table => new
@@ -75,27 +52,52 @@ namespace SpendingTrackerService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "expenses",
+                name: "processed_expense_requests",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<long>(type: "bigint", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(19,2)", nullable: false),
-                    Comment = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    AddedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
                     RequestId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    CategoryId = table.Column<long>(type: "bigint", nullable: false)
+                    ProcessedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_expenses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_expenses_categories_UserId_CategoryId",
-                        columns: x => new { x.UserId, x.CategoryId },
-                        principalTable: "categories",
-                        principalColumns: new[] { "UserId", "Id" },
-                        onDelete: ReferentialAction.Restrict);
+                    table.PrimaryKey("PK_processed_expense_requests", x => new { x.UserId, x.RequestId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "user_stats_daily",
+                columns: table => new
+                {
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    Day = table.Column<DateOnly>(type: "date", nullable: false),
+                    AmountTotal = table.Column<decimal>(type: "numeric(19,2)", nullable: false),
+                    ExpensesCount = table.Column<int>(type: "integer", nullable: false),
+                    MaxExpenseAmount = table.Column<decimal>(type: "numeric(19,2)", nullable: false),
+                    MaxExpenseNote = table.Column<string>(type: "text", nullable: true),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_stats_daily", x => new { x.UserId, x.Day });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "user_stats_daily_by_category",
+                columns: table => new
+                {
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    Day = table.Column<DateOnly>(type: "date", nullable: false),
+                    CategoryId = table.Column<long>(type: "bigint", nullable: false),
+                    AmountTotal = table.Column<decimal>(type: "numeric(19,2)", nullable: false),
+                    MaxExpenseAmount = table.Column<decimal>(type: "numeric(19,2)", nullable: false),
+                    MaxExpenseNote = table.Column<string>(type: "text", nullable: true),
+                    CategoryName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    ExpensesCount = table.Column<int>(type: "integer", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_stats_daily_by_category", x => new { x.UserId, x.Day, x.CategoryId });
                 });
 
             migrationBuilder.CreateTable(
@@ -141,53 +143,6 @@ namespace SpendingTrackerService.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_categories_UserId",
-                table: "categories",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "UX_categories_user_name_active",
-                table: "categories",
-                columns: new[] { "UserId", "Name" },
-                unique: true,
-                filter: "\"IsDeleted\" = false");
-
-            migrationBuilder.CreateIndex(
-                name: "UX_categories_user_request",
-                table: "categories",
-                columns: new[] { "UserId", "RequestId" },
-                unique: true,
-                filter: "\"RequestId\" IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_expenses_user_added_desc",
-                table: "expenses",
-                columns: new[] { "UserId", "AddedAtUtc" },
-                descending: new bool[0]);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_expenses_user_cat",
-                table: "expenses",
-                columns: new[] { "UserId", "CategoryId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_expenses_user_cat_added_desc",
-                table: "expenses",
-                columns: new[] { "UserId", "CategoryId", "AddedAtUtc" },
-                descending: new bool[0]);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_expenses_UserId",
-                table: "expenses",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "UX_expenses_user_request",
-                table: "expenses",
-                columns: new[] { "UserId", "RequestId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_InboxState_Delivered",
                 table: "InboxState",
                 column: "Delivered");
@@ -218,19 +173,55 @@ namespace SpendingTrackerService.Migrations
                 name: "IX_OutboxState_Created",
                 table: "OutboxState",
                 column: "Created");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_processed_expense_requests_processed_at",
+                table: "processed_expense_requests",
+                column: "ProcessedAtUtc");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_stats_daily_day",
+                table: "user_stats_daily",
+                column: "Day");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_stats_daily_user_day",
+                table: "user_stats_daily",
+                columns: new[] { "UserId", "Day" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_stats_dbc_day",
+                table: "user_stats_daily_by_category",
+                column: "Day");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_stats_dbc_user_day",
+                table: "user_stats_daily_by_category",
+                columns: new[] { "UserId", "Day" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_stats_dbc_user_day_amount",
+                table: "user_stats_daily_by_category",
+                columns: new[] { "UserId", "Day", "AmountTotal" },
+                descending: new[] { false, true, true });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "expenses");
-
-            migrationBuilder.DropTable(
                 name: "OutboxMessage");
 
             migrationBuilder.DropTable(
-                name: "categories");
+                name: "processed_expense_requests");
+
+            migrationBuilder.DropTable(
+                name: "user_stats_daily");
+
+            migrationBuilder.DropTable(
+                name: "user_stats_daily_by_category");
 
             migrationBuilder.DropTable(
                 name: "InboxState");

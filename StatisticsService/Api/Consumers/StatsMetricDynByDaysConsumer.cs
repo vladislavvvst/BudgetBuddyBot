@@ -29,14 +29,14 @@ internal sealed class StatsMetricDynByDaysConsumer : IConsumer<GetStatsDaysReque
             if (message.StartDay is null)
             {
                 _logger.LogInformation("Invalid message. StartDay is null");
-                await context.RespondAsync(GetStatsAmountResponse.Empty);
+                await context.RespondAsync(GetStatsDaysResponse.Empty);
                 return;
             }
 
             if (message.EndDay is null)
             {
                 _logger.LogInformation("Invalid message. EndDay is null");
-                await context.RespondAsync(GetStatsAmountResponse.Empty);
+                await context.RespondAsync(GetStatsDaysResponse.Empty);
                 return;
             }
 
@@ -45,7 +45,7 @@ internal sealed class StatsMetricDynByDaysConsumer : IConsumer<GetStatsDaysReque
         }
         else
         {
-            endDay = DateOnly.FromDateTime(DateTime.Now);
+            endDay = DateOnly.FromDateTime(DateTime.UtcNow);
             startDay = message.Period switch
             {
                 PeriodsOfTime.Day   => endDay,
@@ -55,12 +55,34 @@ internal sealed class StatsMetricDynByDaysConsumer : IConsumer<GetStatsDaysReque
             };
         }
 
-        List<DailyAmount> daysAmount = await _dbContext.StatsDaily
+        if (startDay > endDay)
+        {
+            _logger.LogWarning("Invalid range: start {StartDay} > end {EndDay}, userId {UserId}", startDay, endDay, userId);
+            await context.RespondAsync(new GetStatsDaysResponse([]));
+            return;
+        }
+
+        // Инициализируем ряд всеми днями с нулями, чтобы на фронте не было дыр
+        int daysCount = endDay.DayNumber - startDay.DayNumber + 1;
+        Dictionary<DateOnly, decimal> totals = Enumerable
+            .Range(0, daysCount)
+            .Select(offset => startDay.AddDays(offset))
+            .ToDictionary(d => d, _ => 0m);
+
+        List<DailyAmount> rows = await _dbContext.StatsDaily
             .AsNoTracking()
             .Where(x => x.UserId == userId && x.Day >= startDay && x.Day <= endDay)
             .Select(x => new DailyAmount(x.Day, x.AmountTotal))
             .ToListAsync(ct);
 
-        await context.RespondAsync(new GetStatsDaysResponse(daysAmount));
+        foreach (DailyAmount row in rows)
+            totals[row.Day] = row.Amount;
+
+        List<DailyAmount> ordered = totals
+            .OrderBy(kv => kv.Key)
+            .Select(kv => new DailyAmount(kv.Key, kv.Value))
+            .ToList();
+
+        await context.RespondAsync(new GetStatsDaysResponse(ordered));
     }
 }

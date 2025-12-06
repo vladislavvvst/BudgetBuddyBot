@@ -205,7 +205,7 @@ internal static class UiStrings
     {
         StringBuilder sb = new();
 
-        DateOnly startDay = DateOnly.FromDateTime(DateTime.Now);
+        DateOnly startDay = DateOnly.FromDateTime(DateTime.UtcNow);
         DateOnly endDay = startDay.AddDays(-6);
 
         sb.AppendLine($"📊 <b>Неделя: {startDay:dd.MM}–{endDay:dd.MM}</b>");

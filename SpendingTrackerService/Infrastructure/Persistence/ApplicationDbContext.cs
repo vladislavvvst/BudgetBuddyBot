@@ -42,13 +42,13 @@ internal sealed class ApplicationDbContext : DbContext
 
             entity.HasIndex(x => x.UserId);
 
-            entity.HasIndex(x => new { x.UserId, x.AddedAtUtc })
+            entity.HasIndex(x => new { x.UserId, x.AddedAtUtc, x.Id })
                 .HasDatabaseName("IX_expenses_user_added_desc")
-                .IsDescending();
+                .IsDescending(true, true, true);
 
-            entity.HasIndex(x => new { x.UserId, x.CategoryId, x.AddedAtUtc })
+            entity.HasIndex(x => new { x.UserId, x.CategoryId, x.AddedAtUtc, x.Id })
                 .HasDatabaseName("IX_expenses_user_cat_added_desc")
-                .IsDescending();
+                .IsDescending(true, true, true, true);
 
             entity.HasIndex(x => new { x.UserId, x.CategoryId })
                 .HasDatabaseName("IX_expenses_user_cat");

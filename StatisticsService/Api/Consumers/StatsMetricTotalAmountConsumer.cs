@@ -46,7 +46,7 @@ internal sealed class StatsMetricTotalAmountConsumer : IConsumer<GetStatsAmountR
         }
         else
         {
-            endDay = DateOnly.FromDateTime(DateTime.Now);
+            endDay = DateOnly.FromDateTime(DateTime.UtcNow);
             startDay = message.Period switch
             {
                 PeriodsOfTime.Day   => endDay,
@@ -69,7 +69,9 @@ internal sealed class StatsMetricTotalAmountConsumer : IConsumer<GetStatsAmountR
         }
 
         decimal total = statsDaily.Sum(x => x.AmountTotal);
-        decimal avgPerDay = total / statsDaily.Count;
+        // Среднее за календарные дни периода, а не только за дни с расходами
+        int daysInRange = endDay.DayNumber - startDay.DayNumber + 1;
+        decimal avgPerDay = total / daysInRange;
 
         StatsDailyEntity? largestExpenseEntity = statsDaily
             .OrderByDescending(x => x.MaxExpenseAmount)

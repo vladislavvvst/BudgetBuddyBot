@@ -161,4 +161,7 @@ public sealed record GetStatsDaysRequest
 public sealed record GetStatsDaysResponse
 (
     IReadOnlyList<DailyAmount> Days
-);
+)
+{
+    public static GetStatsDaysResponse Empty { get; } = new([]);
+};

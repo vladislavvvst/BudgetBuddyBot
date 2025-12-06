@@ -68,7 +68,18 @@ internal sealed class ExpenseRepository : IExpenseRepository
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
         {
-            return new AddExpenseResult(true, true);
+            ExpenseEntity? existing = await _dbContext.Expenses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.UserId == userId && e.RequestId == requestId, cancellationToken);
+
+            if (existing is null)
+                return new AddExpenseResult(false, true);
+
+            CategoryEntity? categoryEntity = await _dbContext.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.Id == existing.CategoryId && !c.IsDeleted, cancellationToken);
+
+            return new AddExpenseResult(true, true, categoryEntity, existing.Id, existing.AddedAtUtc);
         }
     }
 

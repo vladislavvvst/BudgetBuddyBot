@@ -12,8 +12,8 @@ using SpendingTrackerService.Infrastructure.Persistence;
 namespace SpendingTrackerService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251019190249_UpdateDataAndAddStats")]
-    partial class UpdateDataAndAddStats
+    [Migration("20251206181748_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -194,7 +194,7 @@ namespace SpendingTrackerService.Migrations
                     b.ToTable("OutboxState");
                 });
 
-            modelBuilder.Entity("SpendingTrackerService.Database.Entities.CategoryEntity", b =>
+            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.CategoryEntity", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -202,9 +202,9 @@ namespace SpendingTrackerService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTimeOffset>("AddedAtUtc")
+                    b.Property<DateTime>("AddedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsDeleted")
@@ -248,7 +248,7 @@ namespace SpendingTrackerService.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SpendingTrackerService.Database.Entities.ExpenseEntity", b =>
+            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.ExpenseEntity", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -256,9 +256,9 @@ namespace SpendingTrackerService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTimeOffset>("AddedAtUtc")
+                    b.Property<DateTime>("AddedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
                     b.Property<decimal>("Amount")
@@ -283,10 +283,6 @@ namespace SpendingTrackerService.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "AddedAtUtc")
-                        .IsDescending()
-                        .HasDatabaseName("IX_expenses_user_added_desc");
-
                     b.HasIndex("UserId", "CategoryId")
                         .HasDatabaseName("IX_expenses_user_cat");
 
@@ -294,7 +290,11 @@ namespace SpendingTrackerService.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_expenses_user_request");
 
-                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc")
+                    b.HasIndex("UserId", "AddedAtUtc", "Id")
+                        .IsDescending()
+                        .HasDatabaseName("IX_expenses_user_added_desc");
+
+                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc", "Id")
                         .IsDescending()
                         .HasDatabaseName("IX_expenses_user_cat_added_desc");
 
@@ -313,9 +313,9 @@ namespace SpendingTrackerService.Migrations
                         .HasPrincipalKey("MessageId", "ConsumerId");
                 });
 
-            modelBuilder.Entity("SpendingTrackerService.Database.Entities.ExpenseEntity", b =>
+            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.ExpenseEntity", b =>
                 {
-                    b.HasOne("SpendingTrackerService.Database.Entities.CategoryEntity", "Category")
+                    b.HasOne("SpendingTrackerService.Infrastructure.Persistence.Entities.CategoryEntity", "Category")
                         .WithMany("Expenses")
                         .HasForeignKey("UserId", "CategoryId")
                         .HasPrincipalKey("UserId", "Id")
@@ -325,7 +325,7 @@ namespace SpendingTrackerService.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("SpendingTrackerService.Database.Entities.CategoryEntity", b =>
+            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.CategoryEntity", b =>
                 {
                     b.Navigation("Expenses");
                 });

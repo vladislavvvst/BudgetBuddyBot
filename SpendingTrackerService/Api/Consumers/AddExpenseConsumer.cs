@@ -38,6 +38,14 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
                     request.UserId, request.CategoryId, request.Amount, result.ExpenseId, result.IsIdempotent, context.CorrelationId, context.ConversationId
                 );
 
+                if (result.IsIdempotent)
+                {
+                    _logger.LogInformation(
+                        "[AddExpense] Idempotent repeat user={UserId}, catId={CategoryId}, requestId={RequestId}",
+                        request.UserId, request.CategoryId, request.RequestId);
+                    return;
+                }
+
                 // При неполных данных не уведомляем сервис статистики о новых тратах -> выходим
                 if (result.AddedAtUtc is null || result.CategoryEntity is null)
                 {
@@ -49,7 +57,7 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
                 }
 
                 await context.Publish(new ExpenseAddedNotification(request.UserId, CategoryContractMapper.ToContract(result.CategoryEntity),
-                    new Expense(request.CategoryId, request.Amount, request.Comment, result.AddedAtUtc.Value)), ct);
+                    new Expense(request.CategoryId, request.Amount, request.Comment, result.AddedAtUtc.Value), request.RequestId), ct);
             }
             else
             {

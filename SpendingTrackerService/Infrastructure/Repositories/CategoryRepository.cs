@@ -87,7 +87,6 @@ internal sealed class CategoryRepository : ICategoryRepository
             .AsNoTracking()
             .AnyAsync(c => c.UserId == userId
                            && !c.IsDeleted
-                           && !c.IsSystem
                            && c.Name == normalizedLower, cancellationToken);
         if (activeExists)
             return new AddCategoryResult(false, false, null);
@@ -140,7 +139,19 @@ internal sealed class CategoryRepository : ICategoryRepository
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
         {
-            return new AddCategoryResult(true, false, null);
+            CategoryEntity? existing = await _dbContext.Categories
+                .AsNoTracking()
+                .Where(c => c.UserId == userId && !c.IsDeleted && !c.IsSystem)
+                .FirstOrDefaultAsync(c => c.RequestId == requestId, cancellationToken);
+
+            existing ??= await _dbContext.Categories
+                .AsNoTracking()
+                .Where(c => c.UserId == userId && !c.IsDeleted)
+                .FirstOrDefaultAsync(c => c.Name == normalizedLower, cancellationToken);
+
+            return existing is null
+                ? new AddCategoryResult(false, false, null)
+                : new AddCategoryResult(true, false, existing.Id);
         }
     }
 

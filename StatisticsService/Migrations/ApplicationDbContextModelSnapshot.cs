@@ -190,6 +190,26 @@ namespace StatisticsService.Migrations
                     b.ToTable("OutboxState");
                 });
 
+            modelBuilder.Entity("StatisticsService.Infrastructure.Persistence.Entities.ProcessedExpenseRequestEntity", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RequestId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "RequestId");
+
+                    b.HasIndex("ProcessedAtUtc")
+                        .HasDatabaseName("IX_processed_expense_requests_processed_at");
+
+                    b.ToTable("processed_expense_requests", (string)null);
+                });
+
             modelBuilder.Entity("StatisticsService.Infrastructure.Persistence.Entities.StatsDailyByCategoryEntity", b =>
                 {
                     b.Property<long>("UserId")

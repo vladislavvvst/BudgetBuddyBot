@@ -45,7 +45,7 @@ internal sealed class StatsMetricByCategoryConsumer : IConsumer<GetStatsTopCateg
         }
         else
         {
-            endDay = DateOnly.FromDateTime(DateTime.Now);
+            endDay = DateOnly.FromDateTime(DateTime.UtcNow);
             startDay = message.Period switch
             {
                 PeriodsOfTime.Day   => endDay,
@@ -53,6 +53,13 @@ internal sealed class StatsMetricByCategoryConsumer : IConsumer<GetStatsTopCateg
                 PeriodsOfTime.Month => endDay.AddDays(-29),
                 _ => throw new InvalidEnumArgumentException(nameof(context), (int)message.Period, typeof(PeriodsOfTime))
             };
+        }
+
+        if (startDay > endDay)
+        {
+            _logger.LogWarning("Invalid range: start {StartDay} > end {EndDay}, userId {UserId}", startDay, endDay, userId);
+            await context.RespondAsync(GetStatsTopCategoryResponse.Empty);
+            return;
         }
 
         // Составляем список формата [Имя категории] : [Потраченная сумма за период]

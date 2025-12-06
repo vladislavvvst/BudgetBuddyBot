@@ -8,6 +8,7 @@ internal sealed class ApplicationDbContext : DbContext
 {
     public DbSet<StatsDailyEntity> StatsDaily => Set<StatsDailyEntity>();
     public DbSet<StatsDailyByCategoryEntity> StatsDailyByCategory => Set<StatsDailyByCategoryEntity>();
+    public DbSet<ProcessedExpenseRequestEntity> ProcessedExpenseRequests => Set<ProcessedExpenseRequestEntity>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
@@ -86,6 +87,23 @@ internal sealed class ApplicationDbContext : DbContext
 
             entity.Property(e => e.UpdatedAtUtc)
                 .IsRequired(); // Поставить руками значение!
+        });
+
+        modelBuilder.Entity<ProcessedExpenseRequestEntity>(entity =>
+        {
+            entity.ToTable("processed_expense_requests");
+            entity.HasKey(e => new { e.UserId, e.RequestId });
+
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.RequestId)
+                .HasMaxLength(128)
+                .IsRequired();
+            entity.Property(e => e.ProcessedAtUtc)
+                .HasColumnType("timestamp with time zone")
+                .IsRequired();
+
+            entity.HasIndex(e => e.ProcessedAtUtc)
+                .HasDatabaseName("IX_processed_expense_requests_processed_at");
         });
 
         // MassTransit Inbox/Outbox

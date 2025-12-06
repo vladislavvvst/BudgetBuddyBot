@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SpendingTrackerService.Infrastructure.Persistence;
+using StatisticsService.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SpendingTrackerService.Migrations
+namespace StatisticsService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251120093806_RefactorDateTime")]
-    partial class RefactorDateTime
+    [Migration("20251206182142_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,7 +23,6 @@ namespace SpendingTrackerService.Migrations
                 .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -194,111 +193,106 @@ namespace SpendingTrackerService.Migrations
                     b.ToTable("OutboxState");
                 });
 
-            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.CategoryEntity", b =>
+            modelBuilder.Entity("StatisticsService.Infrastructure.Persistence.Entities.ProcessedExpenseRequestEntity", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<long>("UserId")
                         .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("AddedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("citext");
 
                     b.Property<string>("RequestId")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<DateTime>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "RequestId");
+
+                    b.HasIndex("ProcessedAtUtc")
+                        .HasDatabaseName("IX_processed_expense_requests_processed_at");
+
+                    b.ToTable("processed_expense_requests", (string)null);
+                });
+
+            modelBuilder.Entity("StatisticsService.Infrastructure.Persistence.Entities.StatsDailyByCategoryEntity", b =>
+                {
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
-
-                    b.HasAlternateKey("UserId", "Id")
-                        .HasName("AK_categories_user_id_id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("UX_categories_user_name_active")
-                        .HasFilter("\"IsDeleted\" = false");
-
-                    b.HasIndex("UserId", "RequestId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_categories_user_request")
-                        .HasFilter("\"RequestId\" IS NOT NULL");
-
-                    b.ToTable("categories", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_categories_not_system_deleted", "NOT (\"IsSystem\" AND \"IsDeleted\")");
-                        });
-                });
-
-            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.ExpenseEntity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("AddedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric(19,2)");
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
 
                     b.Property<long>("CategoryId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("Comment")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
+                    b.Property<decimal>("AmountTotal")
+                        .HasColumnType("numeric(19,2)");
 
-                    b.Property<string>("RequestId")
+                    b.Property<string>("CategoryName")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<int>("ExpensesCount")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("MaxExpenseAmount")
+                        .HasColumnType("numeric(19,2)");
+
+                    b.Property<string>("MaxExpenseNote")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "Day", "CategoryId");
+
+                    b.HasIndex("Day")
+                        .HasDatabaseName("ix_user_stats_dbc_day");
+
+                    b.HasIndex("UserId", "Day")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_user_stats_dbc_user_day");
+
+                    b.HasIndex("UserId", "Day", "AmountTotal")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_user_stats_dbc_user_day_amount");
+
+                    b.ToTable("user_stats_daily_by_category", (string)null);
+                });
+
+            modelBuilder.Entity("StatisticsService.Infrastructure.Persistence.Entities.StatsDailyEntity", b =>
+                {
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
 
-                    b.HasIndex("UserId");
+                    b.Property<decimal>("AmountTotal")
+                        .HasColumnType("numeric(19,2)");
 
-                    b.HasIndex("UserId", "AddedAtUtc")
-                        .IsDescending()
-                        .HasDatabaseName("IX_expenses_user_added_desc");
+                    b.Property<int>("ExpensesCount")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("UserId", "CategoryId")
-                        .HasDatabaseName("IX_expenses_user_cat");
+                    b.Property<decimal>("MaxExpenseAmount")
+                        .HasColumnType("numeric(19,2)");
 
-                    b.HasIndex("UserId", "RequestId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_expenses_user_request");
+                    b.Property<string>("MaxExpenseNote")
+                        .HasColumnType("text");
 
-                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc")
-                        .IsDescending()
-                        .HasDatabaseName("IX_expenses_user_cat_added_desc");
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.ToTable("expenses", (string)null);
+                    b.HasKey("UserId", "Day");
+
+                    b.HasIndex("Day")
+                        .HasDatabaseName("ix_user_stats_daily_day");
+
+                    b.HasIndex("UserId", "Day")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_user_stats_daily_user_day");
+
+                    b.ToTable("user_stats_daily", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
@@ -311,23 +305,6 @@ namespace SpendingTrackerService.Migrations
                         .WithMany()
                         .HasForeignKey("InboxMessageId", "InboxConsumerId")
                         .HasPrincipalKey("MessageId", "ConsumerId");
-                });
-
-            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.ExpenseEntity", b =>
-                {
-                    b.HasOne("SpendingTrackerService.Infrastructure.Persistence.Entities.CategoryEntity", "Category")
-                        .WithMany("Expenses")
-                        .HasForeignKey("UserId", "CategoryId")
-                        .HasPrincipalKey("UserId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("SpendingTrackerService.Infrastructure.Persistence.Entities.CategoryEntity", b =>
-                {
-                    b.Navigation("Expenses");
                 });
 #pragma warning restore 612, 618
         }

@@ -280,10 +280,6 @@ namespace SpendingTrackerService.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "AddedAtUtc")
-                        .IsDescending()
-                        .HasDatabaseName("IX_expenses_user_added_desc");
-
                     b.HasIndex("UserId", "CategoryId")
                         .HasDatabaseName("IX_expenses_user_cat");
 
@@ -291,7 +287,11 @@ namespace SpendingTrackerService.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_expenses_user_request");
 
-                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc")
+                    b.HasIndex("UserId", "AddedAtUtc", "Id")
+                        .IsDescending()
+                        .HasDatabaseName("IX_expenses_user_added_desc");
+
+                    b.HasIndex("UserId", "CategoryId", "AddedAtUtc", "Id")
                         .IsDescending()
                         .HasDatabaseName("IX_expenses_user_cat_added_desc");
 
