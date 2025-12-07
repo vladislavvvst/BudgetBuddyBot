@@ -27,11 +27,19 @@ internal sealed class DeleteCategoryConsumer : IConsumer<DeleteCategoryRequest>
 
         try
         {
-            bool success = await _categoryRepository.SoftDeleteAsync(request.UserId, request.CategoryId, request.RequestId, ct);
-            await context.RespondAsync(new DeleteCategoryResponse(success));
+            DeleteCategoryResult result = await _categoryRepository.SoftDeleteAsync(request.UserId, request.CategoryId, request.RequestId, ct);
+            await context.RespondAsync(new DeleteCategoryResponse(result.Success));
 
-            if (success)
+            if (result.Success)
             {
+                if (result.IsIdempotent)
+                {
+                    _logger.LogInformation(
+                        "[DeleteCategory] Idempotent repeat user={UserId}, categoryId={CategoryId}, requestId={RequestId}, corr={CorrelationId}, conv={ConversationId}",
+                        request.UserId, request.CategoryId, request.RequestId, context.CorrelationId, context.ConversationId);
+                    return;
+                }
+
                 _logger.LogInformation(
                     "[DeleteCategory] Soft-deleted user={UserId}, categoryId={CategoryId}, corr={CorrelationId}, conv={ConversationId}",
                     request.UserId, request.CategoryId, context.CorrelationId, context.ConversationId

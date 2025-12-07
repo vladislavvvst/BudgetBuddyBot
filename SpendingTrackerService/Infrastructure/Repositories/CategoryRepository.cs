@@ -66,19 +66,21 @@ internal sealed class CategoryRepository : ICategoryRepository
     public async Task<AddCategoryResult> AddOrRestoreAsync(long userId, string name, string requestId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(requestId))
-            return new AddCategoryResult(false, false, null);
+            return new AddCategoryResult(false, false, false, null);
 
-        bool alreadyHandled = await _dbContext.Categories
+        CategoryEntity? handled = await _dbContext.Categories
             .AsNoTracking()
-            .AnyAsync(c => c.UserId == userId && c.RequestId == requestId, cancellationToken);
+            .Where(c => c.UserId == userId && c.RequestId == requestId)
+            .OrderByDescending(c => c.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (alreadyHandled)
-            return new AddCategoryResult(true, false, null);
+        if (handled is not null)
+            return new AddCategoryResult(true, false, true, handled.Id);
 
         // Нормализация имени
         string collapsed = Regex.Replace(name, @"\s{2,}", " ").Trim();
         if (string.IsNullOrWhiteSpace(collapsed))
-            return new AddCategoryResult(false, false, null);
+            return new AddCategoryResult(false, false, false, null);
 
         string normalizedLower = collapsed.ToLowerInvariant();
 
@@ -89,7 +91,7 @@ internal sealed class CategoryRepository : ICategoryRepository
                            && !c.IsDeleted
                            && c.Name == normalizedLower, cancellationToken);
         if (activeExists)
-            return new AddCategoryResult(false, false, null);
+            return new AddCategoryResult(false, false, false, null);
 
         // Попробуем восстановить последнюю удаленную с таким именем
         CategoryEntity? deleted = await _dbContext.Categories
@@ -110,7 +112,7 @@ internal sealed class CategoryRepository : ICategoryRepository
                                && !c.IsSystem
                                && c.Name == normalizedLower, cancellationToken);
             if (conflict)
-                return new AddCategoryResult(false, false, null);
+                return new AddCategoryResult(false, false, false, null);
 
             // Восстановление на стороне БД
             await _dbContext.Categories
@@ -119,7 +121,7 @@ internal sealed class CategoryRepository : ICategoryRepository
                     .SetProperty(c => c.IsDeleted, false)
                     .SetProperty(c => c.RequestId, requestId), cancellationToken);
 
-            return new AddCategoryResult(true, true, deleted.Id);
+            return new AddCategoryResult(true, true, false, deleted.Id);
         }
 
         CategoryEntity entity = new()
@@ -135,37 +137,34 @@ internal sealed class CategoryRepository : ICategoryRepository
         {
             await _dbContext.Categories.AddAsync(entity, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
-            return new AddCategoryResult(true, false, entity.Id);
+            return new AddCategoryResult(true, false, false, entity.Id);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
         {
             CategoryEntity? existing = await _dbContext.Categories
                 .AsNoTracking()
-                .Where(c => c.UserId == userId && !c.IsDeleted && !c.IsSystem)
-                .FirstOrDefaultAsync(c => c.RequestId == requestId, cancellationToken);
-
-            existing ??= await _dbContext.Categories
-                .AsNoTracking()
                 .Where(c => c.UserId == userId && !c.IsDeleted)
-                .FirstOrDefaultAsync(c => c.Name == normalizedLower, cancellationToken);
+                .FirstOrDefaultAsync(c => c.RequestId == requestId || c.Name == normalizedLower, cancellationToken);
 
-            return existing is null
-                ? new AddCategoryResult(false, false, null)
-                : new AddCategoryResult(true, false, existing.Id);
+            if (existing is null)
+                return new AddCategoryResult(false, false, false, null);
+
+            bool isIdempotent = string.Equals(existing.RequestId, requestId, StringComparison.Ordinal);
+            return new AddCategoryResult(true, false, isIdempotent, existing.Id);
         }
     }
 
-    public async Task<bool> SoftDeleteAsync(long userId, long categoryId, string requestId, CancellationToken cancellationToken)
+    public async Task<DeleteCategoryResult> SoftDeleteAsync(long userId, long categoryId, string requestId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(requestId))
-            return false;
+            return new DeleteCategoryResult(false, false);
 
         bool alreadyHandled = await _dbContext.Categories
             .AsNoTracking()
             .AnyAsync(c => c.UserId == userId && c.RequestId == requestId, cancellationToken);
 
         if (alreadyHandled)
-            return true;
+            return new DeleteCategoryResult(true, true);
 
         // Удаляем на стороне БД с условиями не системная, не удалена
         int rows = await _dbContext.Categories
@@ -178,13 +177,13 @@ internal sealed class CategoryRepository : ICategoryRepository
                 .SetProperty(c => c.RequestId, requestId), cancellationToken);
 
         if (rows == 1)
-            return true;
+            return new DeleteCategoryResult(true, false);
 
-        // Если не обновили ни одной строки, проверим — возможно, это повтор той же команды (RequestId уже записан)
+        // Если не обновили ни одной строки, проверим - возможно, это повтор той же команды (RequestId уже записан)
         bool handledNow = await _dbContext.Categories
             .AsNoTracking()
             .AnyAsync(c => c.UserId == userId && c.RequestId == requestId, cancellationToken);
 
-        return handledNow;
+        return new DeleteCategoryResult(handledNow, handledNow);
     }
 }

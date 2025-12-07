@@ -32,6 +32,14 @@ internal sealed class AddCategoryConsumer : IConsumer<AddCategoryRequest>
 
             if (result.Success)
             {
+                if (result.IsIdempotent)
+                {
+                    _logger.LogInformation(
+                        "[AddCategory] Idempotent repeat '{Name}' user={UserId}, catId={CategoryId}, requestId={RequestId}, corr={CorrelationId}, conv={ConversationId}",
+                        request.Name, request.UserId, result.CategoryId, request.RequestId, context.CorrelationId, context.ConversationId);
+                    return;
+                }
+
                 _logger.LogInformation(
                     "[AddCategory] {Action} '{Name}' user={UserId}, catId={CategoryId}, corr={CorrelationId}, conv={ConversationId}",
                     result.Restored ? "Restored" : "Added", request.Name, request.UserId, result.CategoryId,

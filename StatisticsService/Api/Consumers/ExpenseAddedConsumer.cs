@@ -80,7 +80,8 @@ internal sealed class ExpenseAddedConsumer : IConsumer<ExpenseAddedNotification>
                     AmountTotal = amount,
                     ExpensesCount = 1,
                     MaxExpenseAmount = amount,
-                    MaxExpenseNote = note
+                    MaxExpenseNote = note,
+                    UpdatedAtUtc = DateTime.UtcNow
                 };
                 _dbContext.Add(daily);
             }
@@ -110,7 +111,8 @@ internal sealed class ExpenseAddedConsumer : IConsumer<ExpenseAddedNotification>
                     AmountTotal = amount,
                     ExpensesCount = 1,
                     MaxExpenseAmount = amount,
-                    MaxExpenseNote = note
+                    MaxExpenseNote = note,
+                    UpdatedAtUtc = DateTime.UtcNow
                 };
                 _dbContext.Add(dailyByCat);
             }
