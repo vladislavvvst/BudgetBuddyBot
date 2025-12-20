@@ -70,6 +70,11 @@ internal static class Program
         }));
 
         using IHost host = builder.Build();
+        using IServiceScope scope = host.Services.CreateScope();
+
+        ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+
         await host.RunAsync();
     }
 }

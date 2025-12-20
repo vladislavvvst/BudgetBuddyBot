@@ -17,18 +17,15 @@ namespace TgApiService.Presentation.Telegram.Services;
 internal sealed class UpdateProcessor
 {
     private readonly ILogger<UpdateProcessor> _logger;
-    private readonly IOptions<TelegramOptions> _tgOptions;
     private readonly IStateCache _stateStorage;
     private readonly ISpendingTrackerGateway _tracker;
 
     public UpdateProcessor
     (
-        ILogger<UpdateProcessor> logger, IOptions<TelegramOptions> tgOptions,
-        IStateCache stateStorage, ISpendingTrackerGateway tracker
+        ILogger<UpdateProcessor> logger, IStateCache stateStorage, ISpendingTrackerGateway tracker
     )
     {
         _logger = logger;
-        _tgOptions = tgOptions;
         _stateStorage = stateStorage;
         _tracker = tracker;
     }
@@ -63,16 +60,10 @@ internal sealed class UpdateProcessor
         await SceneRouter.RouteAsync(context, ct);
     }
 
-    private bool IsAllowedAndPrivate(Update update)
+    private static bool IsAllowedAndPrivate(Update update)
     {
         long? id = TryGetChatId(update);
-
-        if (id is null)
-            return false;
-
-        // todo: бот для всех :)
-        bool allowed = true; // id == _tgOptions.Value.AdminId || id == _tgOptions.Value.TestUserId;
-        return allowed && IsPrivate(update);
+        return id is not null && IsPrivate(update);
     }
 
     private static bool IsPrivate(Update update) =>
