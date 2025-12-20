@@ -1,0 +1,115 @@
+﻿services:
+  db_postgres_spending_tracker_service:
+    image: postgres:16-alpine
+    container_name: db_spending
+    environment:
+      POSTGRES_DB: ${SPENDING_DB_NAME}
+      POSTGRES_USER: ${SPENDING_DB_USER}
+      POSTGRES_PASSWORD: ${SPENDING_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - spending_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPENDING_DB_USER} -d ${SPENDING_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  db_postgres_statistics_service:
+    image: postgres:16-alpine
+    container_name: db_stats
+    environment:
+      POSTGRES_DB: ${STATS_DB_NAME}
+      POSTGRES_USER: ${STATS_DB_USER}
+      POSTGRES_PASSWORD: ${STATS_DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - stats_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${STATS_DB_USER} -d ${STATS_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    depends_on:
+      db_postgres_spending_tracker_service:
+        condition: service_healthy
+      db_postgres_statistics_service:
+        condition: service_healthy
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  spending_tracker_service:
+    build:
+      context: .
+      dockerfile: SpendingTrackerService/Dockerfile
+    container_name: spending_tracker_service
+    depends_on:
+      db_postgres_spending_tracker_service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      APP_UID: 0
+      MessageBroker__HostName: rabbitmq
+      MessageBroker__UserName: ${RABBITMQ_USER}
+      MessageBroker__Password: ${RABBITMQ_PASSWORD}
+      ConnectionStrings__ApplicationDbContext: Host=db_postgres_spending_tracker_service;Port=5432;Database=${SPENDING_DB_NAME};Username=${SPENDING_DB_USER};Password=${SPENDING_DB_PASSWORD}
+
+  statistics_service:
+    build:
+      context: .
+      dockerfile: StatisticsService/Dockerfile
+    container_name: statistics_service
+    depends_on:
+      db_postgres_statistics_service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      APP_UID: 0
+      MessageBroker__HostName: rabbitmq
+      MessageBroker__UserName: ${RABBITMQ_USER}
+      MessageBroker__Password: ${RABBITMQ_PASSWORD}
+      ConnectionStrings__ApplicationDbContext: Host=db_postgres_statistics_service;Port=5432;Database=${STATS_DB_NAME};Username=${STATS_DB_USER};Password=${STATS_DB_PASSWORD}
+
+  tg_api_service:
+    build:
+      context: .
+      dockerfile: TgApiService/Dockerfile
+    container_name: tg_api_service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      spending_tracker_service:
+        condition: service_started
+      statistics_service:
+        condition: service_started
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      APP_UID: 0
+      Culture: ru-RU
+      Telegram__Token: ${TELEGRAM_TOKEN}
+      MessageBroker__HostName: rabbitmq
+      MessageBroker__UserName: ${RABBITMQ_USER}
+      MessageBroker__Password: ${RABBITMQ_PASSWORD}
+
+volumes:
+  spending_db_data:
+  stats_db_data:

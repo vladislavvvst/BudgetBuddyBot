@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgApiService", "TgApiService\TgApiService.csproj", "{DF2FF80B-CDC4-4169-930A-7FFBA653A53A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpendingTrackerService", "SpendingTrackerService\SpendingTrackerService.csproj", "{4F5CFCF5-022B-4F3E-A2D3-1A830979E432}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedTypes", "Shared\SharedTypes\SharedTypes.csproj", "{1AEB4F60-B235-9871-9497-A3E1720E3298}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsService", "StatisticsService\StatisticsService.csproj", "{B84EF45F-C2F4-4091-84CF-4466248B03DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B01CD02-9EE9-490C-AD40-910A9CD89495}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Directory.Packages.props = Directory.Packages.props
+		README.md = README.md
+		docker-compose.dev.yml = docker-compose.dev.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF2FF80B-CDC4-4169-930A-7FFBA653A53A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF2FF80B-CDC4-4169-930A-7FFBA653A53A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF2FF80B-CDC4-4169-930A-7FFBA653A53A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF2FF80B-CDC4-4169-930A-7FFBA653A53A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F5CFCF5-022B-4F3E-A2D3-1A830979E432}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F5CFCF5-022B-4F3E-A2D3-1A830979E432}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F5CFCF5-022B-4F3E-A2D3-1A830979E432}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F5CFCF5-022B-4F3E-A2D3-1A830979E432}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AEB4F60-B235-9871-9497-A3E1720E3298}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AEB4F60-B235-9871-9497-A3E1720E3298}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AEB4F60-B235-9871-9497-A3E1720E3298}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AEB4F60-B235-9871-9497-A3E1720E3298}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B84EF45F-C2F4-4091-84CF-4466248B03DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B84EF45F-C2F4-4091-84CF-4466248B03DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B84EF45F-C2F4-4091-84CF-4466248B03DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B84EF45F-C2F4-4091-84CF-4466248B03DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1AEB4F60-B235-9871-9497-A3E1720E3298} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F713E504-4FE7-403E-ADDE-90D3180CAA45}
+	EndGlobalSection
+EndGlobal

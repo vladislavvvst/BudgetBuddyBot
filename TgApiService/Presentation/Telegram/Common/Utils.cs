@@ -1,0 +1,45 @@
+﻿using MassTransit;
+using SharedTypes.Contracts;
+
+namespace TgApiService.Presentation.Telegram.Common;
+
+/// <summary>
+/// Вспомогательные методы, часто используемые сценами.
+/// </summary>
+internal static class Utils
+{
+    public static long ChatId(UpdateContext context) =>
+        context.Update.Message?.Chat.Id ?? context.Update.CallbackQuery!.Message!.Chat.Id;
+
+    public static async Task<IReadOnlyList<Category>> GetUserCategories(UpdateContext context, CancellationToken ct)
+    {
+        long chatId = ChatId(context);
+
+        IReadOnlyList<Category> categories = await context.StateCache.GetCategoriesAsync(chatId);
+
+        if (categories.Count > 0)
+            return categories;
+
+        try
+        {
+            GetCategoriesResponse response = await context.Tracker.GetCategoriesAsync(new(chatId), ct);
+
+            context.Logger.LogInformation("Loaded {Count} categories for user {UserId} from SpendingTrackerService", response.Categories.Count, chatId);
+
+            if (response.Categories.Count > 0)
+                await context.StateCache.SetCategoriesAsync(chatId, response.Categories);
+
+            return response.Categories;
+        }
+        catch (RequestTimeoutException)
+        {
+            context.Logger.LogWarning("GetCategories timeout for user {UserId}", chatId);
+            return [];
+        }
+        catch (RequestFaultException ex)
+        {
+            context.Logger.LogError(ex, "GetCategories fault for user {UserId}", chatId);
+            return [];
+        }
+    }
+}
