@@ -55,8 +55,7 @@ public enum PeriodsOfTime
     None,
     Day,
     Week,
-    Month,
-    Custom
+    Month
 }
 
 /// <summary>

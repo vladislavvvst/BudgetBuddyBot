@@ -33,7 +33,6 @@ internal static class UiStrings
         public const string StatsToday = "stats:today";
         public const string Stats7Days = "stats:7days";
         public const string StatsMonth = "stats:month";
-        public const string StatsRange = "stats:range";
 
         public const string StatsMetricTotalAmount = "stats:metric:total_amount";
         public const string StatsMetricByCategory  = "stats:metric:by_category";

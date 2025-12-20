@@ -42,14 +42,11 @@ internal sealed class ExpenseRepository : IExpenseRepository
         if (!categoryOk)
             return new AddExpenseResult(false, false);
 
-        // Округляем до 2 знаков
-        decimal roundedAmount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
-
         ExpenseEntity entity = new()
         {
             UserId = userId,
             CategoryId = categoryId,
-            Amount = roundedAmount,
+            Amount = amount,
             Comment = comment,
             RequestId = requestId
         };

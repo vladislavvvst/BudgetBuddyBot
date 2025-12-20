@@ -34,7 +34,6 @@ internal static class UiKeyboards
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsToday,    UiStrings.CallbackData.StatsToday)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Stats7Days,    UiStrings.CallbackData.Stats7Days)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsMonth,    UiStrings.CallbackData.StatsMonth)],
-        [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.StatsRange,    UiStrings.CallbackData.StatsRange)],
         [InlineKeyboardButton.WithCallbackData(UiStrings.Buttons.Back,          UiStrings.CallbackData.NavBack)]
     ]);
 

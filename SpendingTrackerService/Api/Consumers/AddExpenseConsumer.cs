@@ -24,10 +24,13 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
             return;
         }
 
+        // Округляем до 2 знаков
+        decimal amount = Math.Round(request.Amount, 2, MidpointRounding.AwayFromZero);
+
         try
         {
             AddExpenseResult result = await _expenseRepository.AddAsync(
-                request.UserId, request.CategoryId, request.Amount, request.Comment, request.RequestId, ct);
+                request.UserId, request.CategoryId, amount, request.Comment, request.RequestId, ct);
 
             await context.RespondAsync(new AddExpenseResponse(result.Success));
 
@@ -35,7 +38,7 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
             {
                 _logger.LogInformation(
                     "[AddExpense] Success user={UserId}, catId={CategoryId}, amount={Amount}, expenseId={ExpenseId}, idem={IsIdempotent}, corr={CorrelationId}, conv={ConversationId}",
-                    request.UserId, request.CategoryId, request.Amount, result.ExpenseId, result.IsIdempotent, context.CorrelationId, context.ConversationId
+                    request.UserId, request.CategoryId, amount, result.ExpenseId, result.IsIdempotent, context.CorrelationId, context.ConversationId
                 );
 
                 if (result.IsIdempotent)
@@ -57,13 +60,13 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
                 }
 
                 await context.Publish(new ExpenseAddedNotification(request.UserId, CategoryContractMapper.ToContract(result.CategoryEntity),
-                    new Expense(request.CategoryId, request.Amount, request.Comment, result.AddedAtUtc.Value), request.RequestId), ct);
+                    new Expense(request.CategoryId, amount, request.Comment, result.AddedAtUtc.Value), request.RequestId), ct);
             }
             else
             {
                 _logger.LogWarning(
                     "[AddExpense] Rejected user={UserId}, catId={CategoryId}, amount={Amount}, corr={CorrelationId}, conv={ConversationId}",
-                    request.UserId, request.CategoryId, request.Amount, context.CorrelationId, context.ConversationId
+                    request.UserId, request.CategoryId, amount, context.CorrelationId, context.ConversationId
                 );
             }
         }
@@ -71,7 +74,7 @@ internal sealed class AddExpenseConsumer : IConsumer<AddExpenseRequest>
         {
             _logger.LogError(ex,
                 "[AddExpense] Unexpected error user={UserId}, catId={CategoryId}, amount={Amount}, corr={CorrelationId}, conv={ConversationId}",
-                request.UserId, request.CategoryId, request.Amount, context.CorrelationId, context.ConversationId);
+                request.UserId, request.CategoryId, amount, context.CorrelationId, context.ConversationId);
 
             await context.RespondAsync(new AddExpenseResponse(false));
         }

@@ -49,14 +49,6 @@ internal sealed class StatsPeriodScene : IScene
             return;
         }
 
-        if (string.Equals(data, UiStrings.CallbackData.StatsRange, StringComparison.Ordinal))
-        {
-            // todo: важно проверить при установке Custom что промежуток задан корректно
-            await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Custom);
-            await context.Bot.SendMessage(chatId, "Календаря пока нету :(", cancellationToken: ct);
-            return;
-        }
-
         if (string.Equals(data, UiStrings.CallbackData.StatsToday, StringComparison.Ordinal))
             await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Day);
 
