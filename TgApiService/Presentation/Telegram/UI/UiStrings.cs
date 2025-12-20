@@ -71,7 +71,6 @@ internal static class UiStrings
         public const string StatsToday    = "Сегодня";
         public const string Stats7Days    = "7 дней";
         public const string StatsMonth    = "Месяц";
-        public const string StatsRange    = "📆 Диапазон";
 
         public const string StatsMetricTotalAmount = "💰 Общая сумма";
         public const string StatsMetricByCategory  = "🗂️ По категориям";
@@ -200,10 +199,10 @@ internal static class UiStrings
     {
         StringBuilder sb = new();
 
-        DateOnly startDay = DateOnly.FromDateTime(DateTime.UtcNow);
-        DateOnly endDay = startDay.AddDays(-6);
+        DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
+        DateOnly startDay = today.AddDays(-6);
 
-        sb.AppendLine($"📊 <b>Неделя: {startDay:dd.MM}–{endDay:dd.MM}</b>");
+        sb.AppendLine($"📊 <b>Неделя: {startDay:dd.MM}–{today:dd.MM}</b>");
         sb.AppendLine();
 
         Summary s = stats.Summary;

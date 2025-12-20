@@ -49,14 +49,29 @@ internal sealed class StatsPeriodScene : IScene
             return;
         }
 
+        bool handled = false;
+
         if (string.Equals(data, UiStrings.CallbackData.StatsToday, StringComparison.Ordinal))
+        {
             await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Day);
-
-        if (string.Equals(data, UiStrings.CallbackData.Stats7Days, StringComparison.Ordinal))
+            handled = true;
+        }
+        else if (string.Equals(data, UiStrings.CallbackData.Stats7Days, StringComparison.Ordinal))
+        {
             await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Week);
-
-        if (string.Equals(data, UiStrings.CallbackData.StatsMonth, StringComparison.Ordinal))
+            handled = true;
+        }
+        else if (string.Equals(data, UiStrings.CallbackData.StatsMonth, StringComparison.Ordinal))
+        {
             await context.StateCache.SetStatsPeriod(chatId, PeriodsOfTime.Month);
+            handled = true;
+        }
+
+        if (!handled)
+        {
+            await context.Bot.SendMessage(chatId, UiStrings.Errors.UnknownCmd, cancellationToken: ct);
+            return;
+        }
 
         await SceneRegistry.NavigateForwardAsync(context, UserState.StatisticsMetric, ct);
     }
