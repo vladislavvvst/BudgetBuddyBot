@@ -1,11 +1,10 @@
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SharedTypes;
 using SpendingTrackerService.Api.Consumers;
 using SpendingTrackerService.Infrastructure.Persistence;
-using SpendingTrackerService.Infrastructure.Repositories;
 
 namespace SpendingTrackerService;
 
@@ -17,13 +16,15 @@ internal static class Program
 
         builder.Services.AddSerilog(lc => lc.ReadFrom.Configuration(builder.Configuration));
 
+        builder.Services.AddOptions<MessageBrokerOptions>()
+            .Bind(builder.Configuration.GetRequiredSection(MessageBrokerOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(ApplicationDbContext)));
         });
-
-        builder.Services.Configure<MessageBrokerOptions>(
-            builder.Configuration.GetSection(MessageBrokerOptions.SectionName));
 
         builder.Services.AddMassTransit(busCfg =>
         {
@@ -65,9 +66,6 @@ internal static class Program
                 cfg.ConfigureEndpoints(context);
             });
         });
-
-        builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-        builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 
         builder.ConfigureContainer(new DefaultServiceProviderFactory(new ServiceProviderOptions
         {

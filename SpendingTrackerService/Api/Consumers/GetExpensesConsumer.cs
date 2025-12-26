@@ -1,17 +1,19 @@
 ﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using SharedTypes.Contracts;
 using SpendingTrackerService.Api.Mapping;
-using SpendingTrackerService.Infrastructure.Repositories;
+using SpendingTrackerService.Infrastructure.Persistence;
+using SpendingTrackerService.Infrastructure.Persistence.Entities;
 
 namespace SpendingTrackerService.Api.Consumers;
 
 internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
 {
     private readonly ILogger<GetExpensesConsumer> _logger;
-    private readonly IExpenseRepository _expenseRepository;
+    private readonly ApplicationDbContext _dbContext;
 
-    public GetExpensesConsumer(ILogger<GetExpensesConsumer> logger, IExpenseRepository expenseRepository)
-        => (_logger, _expenseRepository) = (logger, expenseRepository);
+    public GetExpensesConsumer(ILogger<GetExpensesConsumer> logger, ApplicationDbContext dbContext)
+        => (_logger, _dbContext) = (logger, dbContext);
 
     public async Task Consume(ConsumeContext<GetExpensesRequest> context)
     {
@@ -23,12 +25,24 @@ internal sealed class GetExpensesConsumer : IConsumer<GetExpensesRequest>
 
         try
         {
-            PagedExpenses pageResult = await _expenseRepository.GetPagedAsync(userId, page, pageSize, ct);
-            await context.RespondAsync(new GetExpensesResponse(ExpenseContractMapper.ToContract(pageResult.Items)));
+            IQueryable<ExpenseEntity> queryable = _dbContext.Expenses
+                .AsNoTracking()
+                .Where(e => e.UserId == userId);
+
+            int total = await queryable.CountAsync(ct);
+
+            List<ExpenseEntity> items = await queryable
+                .OrderByDescending(e => e.AddedAtUtc)
+                .ThenByDescending(e => e.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            await context.RespondAsync(new GetExpensesResponse(ExpenseContractMapper.ToContract(items)));
 
             _logger.LogInformation(
                 "[GetExpenses] user={UserId}, page={Page}/{PageSize}, fetched={Count}, total={Total}, corr={CorrelationId}, conv={ConversationId}",
-                userId, pageResult.Page, pageResult.PageSize, pageResult.Items.Count, pageResult.Total, context.CorrelationId, context.ConversationId
+                userId, page, pageSize, items.Count, total, context.CorrelationId, context.ConversationId
             );
         }
         catch (Exception ex)
